@@ -2,9 +2,9 @@
 
 According to the currency price information provided by the HTTP API, send the currency switching command to Kafka
 
-## HTTP接口
+## HTTP interface
 
-接口应返回如下JSON：
+The interface should return JSON like this:
 
 ```
 {
@@ -21,7 +21,7 @@ According to the currency price information provided by the HTTP API, send the c
 
 Among them: `Coins` is a recommended currency for excavation, sorted from high to low according to income.
 
-## 构建
+## Construct
 ```
 go get github.com/segmentio/kafka-go
 go get github.com/golang/snappy
@@ -30,7 +30,7 @@ go get github.com/golang/glog
 go build
 ```
 
-## 运行
+## run
 ```
 cp config.default.json config.json
 ./chainSwitcher --config config.json --logtostderr

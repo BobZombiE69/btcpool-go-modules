@@ -1,27 +1,27 @@
-# [User Chain API Server] (Userchainapiserver/)
+# [User Chain API Server](userChainAPIServer/)
 
 Merge from two modules:
-* [Switcher API Server] (UserchainaPiserver/Switcherapiserver/)
-  API that provides stratum switching
-* [Init User Coin]
-  User currency record in Zookeeper
+* [Switcher API Server](userChainAPIServer/switcherAPIServer/)
+  Provides an API to trigger Stratum switching
+* [Init User Coin](userChainAPIServer/initUserCoin/)
+  Initialize the user currency record in zookeeper
 
-# [MERGED MINING ProXY]
+# [Merged Mining Proxy](mergedMiningProxy/)
 
-Multi -currency combined mining agents support domain name coins, Elastos, etc. with Bitcoin and mining at the same time.
+Multi-currency joint mining agent, support Namecoin, Elastos, etc., and Bitcoin joint mining at the same time.
 
-# [Init Nicehash] (Initnicehash/)
+# [Init NiceHash](initNiceHash/)
 
-Initialize the Nicehash configuration in Zookeeper, to obtain the minimum difficulty required by each algorithm by calling the Nicehash API, and write it to the use of SSERVER.
+Initialize the NiceHash configuration in ZooKeeper, obtain the minimum diffiStandby sserver to use. by each algorithm by calling the NiceHash API, and write to ZooKeeper to备 sserver 来使用。
 
-# [Chain Switcher] (Chainswitcher/)
-Send a currency to a currency automatic switching command to SSERVER.
+# [Chain Switcher](chainSwitcher/)
+Send currency automatic switching command to sserver.
 
-# [Stratum Switcher] (Stratumswitcher/)
+# [Stratum Switcher](stratumSwitcher/)
 
-The Stratum proxy of the currency can be switched to work with BTCPOOL.
+A currency-switchable Stratum agent for working with BTCPool.
 
-** has been abandoned. SSERVER in the BTCPOOL project now has a currency switching function and no longer needs Stratum Switcher. **
+**Obsolete, the sserver in the btcpool project now has the function of currency switching directly, no need for Stratum Switcher anymore. **
 
-* [BTCPool for Bitcoin Cash] (https://github.com/btccom/bccpool)
-* [Btcpool for bitcoin] (https://github.com/btccom/btcpool)
+* [BTCPool for Bitcoin Cash](https://github.com/btccom/bccpool)
+* [BTCPool for Bitcoin](https://github.com/btccom/btcpool)
