@@ -128,7 +128,7 @@ func (handle *DBConnection) InsertAuxBlock(blockinfo SubmitAuxBlockInfo) (bool){
 //     info.CurrentTime = "2019-12-21 02:15:33"
 //     info.RpcResponse = "{\"id\":0, \"result\": false}"
 //     info.IsSubmitSuccess = true
-//     // timeStr:=time.Now().Format("2006-01-02 15:04:05")  //当前时间的字符串，2006-01-02 15:04:05据说是golang的诞生时间，固定写法
+//     // timeStr:=time.Now().Format("2006-01-02 15:04:05")  //The string of the current time, 2006-01-02 15:04:05 is said to be the birth time of golang, fixed writing
 
 //     // glog.Info(timeStr) 
 

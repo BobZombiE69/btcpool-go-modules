@@ -7,21 +7,21 @@ import (
 	"github.com/golang/glog"
 )
 
-// ChainType 区块链类型
+// ChainType blockchain type
 type ChainType uint8
 
 const (
-	// ChainTypeBitcoin 比特币或类似区块链
+	// ChainTypeBitcoin Bitcoin or similar blockchain
 	ChainTypeBitcoin ChainType = iota
 	// ChainTypeDecredNormal DCR Normal
 	ChainTypeDecredNormal
 	// ChainTypeDecredGoMiner DCR GoMiner
 	ChainTypeDecredGoMiner
-	// ChainTypeEthereum 以太坊或类似区块链
+	// ChainTypeEthereum Ethereum or similar blockchain
 	ChainTypeEthereum
 )
 
-// ToString 转换为字符串
+// ToString convert to string
 func (chainType ChainType) ToString() string {
 	switch chainType {
 	case ChainTypeBitcoin:
@@ -37,25 +37,25 @@ func (chainType ChainType) ToString() string {
 	}
 }
 
-// ConfigData 配置数据
+// ConfigData Configuration Data
 type ConfigData struct {
 	ServerID                     uint8
 	ChainType                    string
 	ListenAddr                   string
 	StratumServerMap             StratumServerInfoMap
 	ZKBroker                     []string
-	ZKServerIDAssignDir          string // 以斜杠结尾
-	ZKSwitcherWatchDir           string // 以斜杠结尾
+	ZKServerIDAssignDir          string // ends with a slash
+	ZKSwitcherWatchDir           string // ends with a slash
 	EnableUserAutoReg            bool
-	ZKAutoRegWatchDir            string // 以斜杠结尾
+	ZKAutoRegWatchDir            string // ends with a slash
 	AutoRegMaxWaitUsers          int64
 	StratumServerCaseInsensitive bool
-	ZKUserCaseInsensitiveIndex   string // 以斜杠结尾
+	ZKUserCaseInsensitiveIndex   string // ends with a slash
 	EnableHTTPDebug              bool
 	HTTPDebugListenAddr          string
 }
 
-// LoadFromFile 从文件载入配置
+// LoadFromFile Load configuration from file
 func (conf *ConfigData) LoadFromFile(file string) (err error) {
 
 	configJSON, err := ioutil.ReadFile(file)
@@ -66,7 +66,7 @@ func (conf *ConfigData) LoadFromFile(file string) (err error) {
 
 	err = json.Unmarshal(configJSON, conf)
 
-	// 若zookeeper路径不以“/”结尾，则添加
+	// If the zookeeper path does not end with "/", add
 	if conf.ZKServerIDAssignDir[len(conf.ZKServerIDAssignDir)-1] != '/' {
 		conf.ZKServerIDAssignDir += "/"
 	}
@@ -82,7 +82,7 @@ func (conf *ConfigData) LoadFromFile(file string) (err error) {
 		conf.ZKUserCaseInsensitiveIndex += "/"
 	}
 
-	// 若UserSuffix为空，设为与币种相同
+	// If UserSuffix is ​​empty, set the same as the currency
 	for k, v := range conf.StratumServerMap {
 		if v.UserSuffix == "" {
 			v.UserSuffix = k
@@ -94,7 +94,7 @@ func (conf *ConfigData) LoadFromFile(file string) (err error) {
 	return
 }
 
-// SaveToFile 保存配置到文件
+// SaveToFile save configuration to file
 func (conf *ConfigData) SaveToFile(file string) (err error) {
 
 	configJSON, err := json.Marshal(conf)
@@ -109,9 +109,9 @@ func (conf *ConfigData) SaveToFile(file string) (err error) {
 
 // StratumSessionData Stratum会话数据
 type StratumSessionData struct {
-	// 会话ID
+	// session id
 	SessionID uint32
-	// 用户所挖的币种
+	// The currency mined by the user
 	MiningCoin string
 
 	ClientConnFD uintptr
@@ -120,18 +120,18 @@ type StratumSessionData struct {
 	StratumSubscribeRequest *JSONRPCRequest
 	StratumAuthorizeRequest *JSONRPCRequest
 
-	// 比特币AsicBoost挖矿版本掩码
+	// Bitcoin AsicBoost mining version mask
 	VersionMask uint32 `json:",omitempty"`
 }
 
-// RuntimeData 运行时数据
+// RuntimeData runtime data
 type RuntimeData struct {
 	Action       string
 	ServerID     uint8
 	SessionDatas []StratumSessionData
 }
 
-// LoadFromFile 从文件载入配置
+// LoadFromFile Load configuration from file
 func (conf *RuntimeData) LoadFromFile(file string) (err error) {
 
 	configJSON, err := ioutil.ReadFile(file)
@@ -144,7 +144,7 @@ func (conf *RuntimeData) LoadFromFile(file string) (err error) {
 	return
 }
 
-// SaveToFile 保存配置到文件
+// SaveToFile save configuration to file
 func (conf *RuntimeData) SaveToFile(file string) (err error) {
 
 	configJSON, err := json.Marshal(conf)

@@ -7,22 +7,22 @@ import (
 	"github.com/golang/glog"
 )
 
-// 保存运行时状态文件的变量
+// Variables that hold runtime state files
 const runtimeFilePath = "./runtime.json"
 
-// Upgradable 不停机升级StratumSwitcher进程
+// Upgradable Upgrading StratumSwitcher processes without downtime
 type Upgradable struct {
 	sessionManager *StratumSessionManager
 }
 
-// NewUpgradable 创建Upgradable对象
+// NewUpgradable Create an Upgradable object
 func NewUpgradable(sessionManager *StratumSessionManager) (upgradable *Upgradable) {
 	upgradable = new(Upgradable)
 	upgradable.sessionManager = sessionManager
 	return
 }
 
-// 升级StratumSwitcher进程
+// Upgrade StratumSwitcher process
 func (upgradable *Upgradable) upgradeStratumSwitcher() (err error) {
 	glog.Info("Upgrading...")
 

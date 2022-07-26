@@ -2,15 +2,15 @@ package main
 
 import "errors"
 
-// StratumError Stratum错误
+// StratumError Stratum error
 type StratumError struct {
-	// 错误号
+	// error number
 	ErrNo int
-	// 错误信息
+	// error message
 	ErrMsg string
 }
 
-// NewStratumError 新建一个StratumError
+// NewStratumError Create a new StratumError
 func NewStratumError(errNo int, errMsg string) *StratumError {
 	err := new(StratumError)
 	err.ErrNo = errNo
@@ -19,12 +19,12 @@ func NewStratumError(errNo int, errMsg string) *StratumError {
 	return err
 }
 
-// Error 实现StratumError的Error()接口以便其被当做error类型使用
+// Error Implements the Error() interface of StratumError so that it can be used as an error type
 func (err *StratumError) Error() string {
 	return err.ErrMsg
 }
 
-// ToJSONRPCArray 转换为JSONRPCArray
+// ToJSONRPCArray Convert to JSONRPCArray
 func (err *StratumError) ToJSONRPCArray(extData interface{}) JSONRPCArray {
 	if err == nil {
 		return nil
@@ -34,52 +34,52 @@ func (err *StratumError) ToJSONRPCArray(extData interface{}) JSONRPCArray {
 }
 
 var (
-	// ErrBufIOReadTimeout 从bufio.Reader中读取数据时超时
+	// ErrBufIOReadTimeout timed out reading data from bufio.Reader
 	ErrBufIOReadTimeout = errors.New("BufIO Read Timeout")
-	// ErrSessionIDFull SessionID已满（所有可用值均已分配）
+	// ErrSessionIDFull SessionID is full (all available values ​​are assigned)
 	ErrSessionIDFull = errors.New("Session ID is Full")
-	// ErrSessionIDOccupied SessionID已被占用（恢复SessionID时）
+	// ErrSessionIDOccupied SessionID has been occupied (when restoring SessionID)
 	ErrSessionIDOccupied = errors.New("Session ID has been occupied")
-	// ErrParseSubscribeResponseFailed 解析订阅响应失败
+	// ErrParseSubscribeResponseFailed Failed to parse subscription response
 	ErrParseSubscribeResponseFailed = errors.New("Parse Subscribe Response Failed")
-	// ErrSessionIDInconformity 返回的会话ID和当前保存的不匹配
+	// The session ID returned by ErrSessionIDInconformity does not match the currently saved session ID
 	ErrSessionIDInconformity = errors.New("Session ID Inconformity")
-	// ErrAuthorizeFailed 认证失败
+	// ErrAuthorizeFailed Authentication failed
 	ErrAuthorizeFailed = errors.New("Authorize Failed")
-	// ErrTooMuchPendingAutoRegReq 太多等待中的自动注册请求
+	// ErrTooMuchPendingAutoRegReq Too many pending auto-registration requests
 	ErrTooMuchPendingAutoRegReq = errors.New("Too much pending auto reg request")
 )
 
 var (
-	// StratumErrNeedSubscribed 需要订阅
+	// StratumErrNeedSubscribed requires subscription
 	StratumErrNeedSubscribed = NewStratumError(101, "Need Subscribed")
-	// StratumErrDuplicateSubscribed 重复订阅
+	// StratumErrDuplicateSubscribed Duplicate Subscribed
 	StratumErrDuplicateSubscribed = NewStratumError(102, "Duplicate Subscribed")
-	// StratumErrTooFewParams 参数太少
+	// StratumErrTooFewParams too few parameters
 	StratumErrTooFewParams = NewStratumError(103, "Too Few Params")
-	// StratumErrWorkerNameMustBeString 矿工名必须是字符串
+	// StratumErrWorkerNameMustBeString miner name must be a string
 	StratumErrWorkerNameMustBeString = NewStratumError(104, "Worker Name Must be a String")
-	// StratumErrWorkerNameStartWrong 矿工名开头错误
+	// StratumErrWorkerNameStartWrong Miner name starts incorrectly
 	StratumErrWorkerNameStartWrong = NewStratumError(105, "Sub-account Name Cannot be Empty")
 
-	// StratumErrStratumServerNotFound 找不到对应币种的Stratum Server
+	// StratumErrStratumServerNotFound The Stratum Server of the corresponding currency could not be found
 	StratumErrStratumServerNotFound = NewStratumError(301, "Stratum Server Not Found")
-	// StratumErrConnectStratumServerFailed 对应币种的Stratum Server连接失败
+	// StratumErrConnectStratumServerFailed The Stratum Server connection of the corresponding currency failed
 	StratumErrConnectStratumServerFailed = NewStratumError(302, "Connect Stratum Server Failed")
 
-	// StratumErrUnknownChainType 未知区块链类型
+	// StratumErrUnknownChainType Unknown blockchain type
 	StratumErrUnknownChainType = NewStratumError(500, "Unknown Chain Type")
 )
 
 var (
-	// ErrReadFailed IO读错误
+	// ErrReadFailed IO read error
 	ErrReadFailed = errors.New("Read Failed")
-	// ErrWriteFailed IO写错误
+	// ErrWriteFailed IO write error
 	ErrWriteFailed = errors.New("Write Failed")
-	// ErrInvalidReader 非法Reader
+	// ErrInvalidReader illegal reader
 	ErrInvalidReader = errors.New("Invalid Reader")
-	// ErrInvalidWritter 非法Writter
+	// ErrInvalidWritter Illegal Writer
 	ErrInvalidWritter = errors.New("Invalid Writter")
-	// ErrInvalidBuffer 非法Buffer
+	// ErrInvalidBuffer Illegal Buffer
 	ErrInvalidBuffer = errors.New("Invalid Buffer")
 )

@@ -1,6 +1,6 @@
 # Chain Switcher
 
-根据HTTP API提供的币种价格信息，发送币种切换命令到kafka
+According to the currency price information provided by the HTTP API, send the currency switching command to Kafka
 
 ## HTTP接口
 
@@ -19,7 +19,7 @@
 }
 ```
 
-其中：`coins` 为推荐挖掘的币种，按收益从高到低排序。
+Among them: `Coins` is a recommended currency for excavation, sorted from high to low according to income.
 
 ## 构建
 ```
@@ -38,13 +38,13 @@ cp config.default.json config.json
 
 # Docker
 
-## 构建
+## Construct
 ```
 cd btcpool-go-modules/chainSwitcher
 docker build -t btcpool-chain-switcher -f Dockerfile ..
 ```
 
-## 运行
+## run
 ```
 docker run -it --rm --network=host \
     -e KafkaBrokers=127.0.0.1:9092,127.0.0.2:9092,127.0.0.3:9092 \
@@ -57,7 +57,7 @@ docker run -it --rm --network=host \
     -e MySQLConnStr="root:root@/bpool_local_db" \
     btcpool-chain-switcher -logtostderr -v 2
 
-# 全部参数：
+# All parameters:
 docker run -it --rm --network=host \
     -e KafkaBrokers=127.0.0.1:9092,127.0.0.2:9092,127.0.0.3:9092 \
     -e KafkaControllerTopic=BtcManController \
@@ -82,7 +82,7 @@ docker run -it --rm --network=host \
     -e RecordLifetime="60" \
     btcpool-chain-switcher -logtostderr -v 2
 
-# 守护进程
+# Guardian
 docker run -it --name chain-switcher --network=host --restart always -d \
     -e KafkaBrokers=127.0.0.1:9092,127.0.0.2:9092,127.0.0.3:9092 \
     -e KafkaControllerTopic=BtcManController \
@@ -95,8 +95,8 @@ docker run -it --name chain-switcher --network=host --restart always -d \
     btcpool-chain-switcher -logtostderr -v 2
 ```
 
-## 数据库变更
-程序会自动尝试创建如下数据表：
+## database change
+The program will automatically try to create the following data table:
 ```
 CREATE TABLE IF NOT EXISTS `<configData.MySQL.Table的值>`(
     id bigint(20) NOT NULL AUTO_INCREMENT,

@@ -11,7 +11,7 @@ func main() {
 	configFilePath := flag.String("config", "./config.json", "Path of config file")
 	flag.Parse()
 
-	// 读取配置文件
+	// read configuration file
 	var configData ConfigData
 	err := configData.LoadFromFile(*configFilePath)
 	if err != nil {
@@ -19,9 +19,9 @@ func main() {
 		return
 	}
 
-	// 运行任务生成器
+	// Run the task generator
 	auxJobMaker := NewAuxJobMaker(configData.AuxJobMaker, configData.Chains)
 	auxJobMaker.Run()
-	// 启动 RPC Server
+	// Start RPC Server
 	runHTTPServer(configData.RPCServer, auxJobMaker)
 }

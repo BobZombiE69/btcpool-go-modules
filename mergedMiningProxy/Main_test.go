@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-// 测试 bash.Hash() 和 hash.Byte32.Reverse()
+// Test bash.Hash() and hash.Byte32.Reverse()
 func TestHashAndReverse(t *testing.T) {
 	h := hash.Hash([]byte("A"))
 	hReverse := h.Reverse()
@@ -31,7 +31,7 @@ func TestHashAndReverse(t *testing.T) {
 	}
 }
 
-// 测试只有一个叶结点（叶结点就是 merkle root）的 Merkle Tree
+// Test a Merkle Tree with only one leaf node (the leaf node is the merkle root)
 func TestMerkleOnlyOneLeaf(t *testing.T) {
 	h := hash.Hash([]byte{1, 2, 5, 8, 0})
 	expectedH := "7b1dbc5469e8b55814186f0ee470af64543eafd39ebb26c6be0bc0140f5cd16f"
@@ -40,7 +40,7 @@ func TestMerkleOnlyOneLeaf(t *testing.T) {
 		t.Fatalf("hash failed, expected: %s, got: %s", expectedH, h)
 	}
 
-	// 只有一个叶结点的 merkle tree
+	// merkle tree with only one leaf node
 	tree := merkle.NewMerkleTree(merkle.Row{h})
 	root := tree.MerkleRoot()
 	pathLen := len(tree.MerklePathForLeaf(0))

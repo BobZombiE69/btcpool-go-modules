@@ -11,13 +11,13 @@ import (
 	"merkle-tree-and-bitcoin/merkle"
 )
 
-// AuxMerkleBranch 合并挖矿的 Merkle Branch
+// AuxMerkleBranch merged mining Merkle Branch
 type AuxMerkleBranch struct {
 	branchs  []hash.Byte32
 	sideMask uint32
 }
 
-// AuxPowData 辅助工作量数据
+// AuxPowData Auxiliary workload data
 type AuxPowData struct {
 	coinbaseTxn      []byte
 	blockHash        hash.Byte32
@@ -26,7 +26,7 @@ type AuxPowData struct {
 	parentBlock      []byte
 }
 
-// ParseAuxPowData 解析辅助工作量数据
+// ParseAuxPowData Parsing auxiliary workload data
 /*
 <https://en.bitcoin.it/wiki/Merged_mining_specification#Aux_proof-of-work_block>
 
@@ -54,8 +54,8 @@ func ParseAuxPowData(dataHex string, chainType string) (auxPowData *AuxPowData, 
 	auxPowData.parentBlock = make([]byte, 80)
 	copy(auxPowData.parentBlock, data[len(data)-80:])
 
-	// 因为解析 coinbase_txn 十分困难，且无法简单得到其准确长度，
-	// 所以决定先计算出 block_hash，然后从字节流中找到该 hash 以确定 coinbase_txn 的长度。
+//Because parsing coinbase_txn is very difficult, and its exact length cannot be easily obtained,
+//So I decided to calculate block_hash first, and then find the hash from the byte stream to determine the length of coinbase_txn.
 	if chainType == "LTC" {
 		scryptKey, errScrypt := Scrypt(auxPowData.parentBlock)
 		if errScrypt != nil {
@@ -66,15 +66,15 @@ func ParseAuxPowData(dataHex string, chainType string) (auxPowData *AuxPowData, 
 
 	} else {
 		auxPowData.blockHash = hash.Hash(auxPowData.parentBlock)
-		// BTCPool的默认字节序是 big-endian
+		// The default endianness of BTCPool is big-endian
 		auxPowData.blockHash = auxPowData.blockHash.Reverse()
 	}
 
 
-	// 从字节流中找到 block_hash 以确定 coinbase_txn 的长度
+	// found from the byte stream block_hash To determine coinbase_txn length
 	index := bytes.Index(data, auxPowData.blockHash[:])
 	if index == -1 {
-		/* 找不到，尝试 little-endian
+		/* can't find it, try little-endian
 		* <https://en.bitcoin.it/wiki/Merged_mining_specification#Aux_proof-of-work_block>
 		* Note that the block_hash element is not needed as you have the full parent_block header element
 		* and can calculate the hash from that. The current Namecoin client doesn't check this field for
@@ -89,50 +89,50 @@ func ParseAuxPowData(dataHex string, chainType string) (auxPowData *AuxPowData, 
 
 	}
 
-	// index 在数值上等于 coinbase_txn 的长度
+	// index is numerically equal to the length of coinbase_txn
 	auxPowData.coinbaseTxn = make([]byte, index)
 	copy(auxPowData.coinbaseTxn, data[0:])
 
-	// 跳过 block_hash
+	// jump over block_hash
 	index += 32
 
 	// coinbaseBranchSize 为变长整数 <https://en.bitcoin.it/wiki/Protocol_documentation#Variable_length_integer> ，
-	// 但是不太可能超过 0xFD。所以假设 coinbaseBranchSize 只有一字节。
+	// But it is unlikely to exceed 0xFD. So let's say coinbaseBranchSize is only one byte.
 	coinbaseBranchSize := int(data[index])
 	index++
 
-	// 读取 coinbase branch
+	// read coinbase branch
 	auxPowData.coinbaseBranch.branchs = make([]hash.Byte32, coinbaseBranchSize)
 	for i := 0; i < coinbaseBranchSize; i++ {
 		copy(auxPowData.coinbaseBranch.branchs[i][:], data[index:])
 		index += 32
 	}
 
-	// 读取 coinbase branch 的 side mask
+	// read coinbase branch of side mask
 	sideMask := make([]byte, 4)
 	copy(sideMask, data[index:])
 	auxPowData.coinbaseBranch.sideMask = binary.LittleEndian.Uint32(sideMask)
 	index += 4
 
-	// blockchainBranchSize 为变长整数 <https://en.bitcoin.it/wiki/Protocol_documentation#Variable_length_integer> ，
-	// 但是不太可能超过 0xFD。所以假设 blockchainBranchSize 只有一字节。
+//blockchainBranchSize is a variable length integer <https://en.bitcoin.it/wiki/Protocol_documentation#Variable_length_integer> ,
+//but unlikely to exceed 0xFD. So let's say blockchainBranchSize is only one byte.
 	blockchainBranchSize := int(data[index])
 	index++
 
-	// 读取 blockchain branch
+	// read blockchain branch
 	auxPowData.blockchainBranch.branchs = make([]hash.Byte32, blockchainBranchSize)
 	for i := 0; i < blockchainBranchSize; i++ {
 		copy(auxPowData.blockchainBranch.branchs[i][:], data[index:])
 		index += 32
 	}
 
-	// 读取 blockchain branch 的 side mask
+	// read blockchain branch of side mask
 	sideMask = make([]byte, 4)
 	copy(sideMask, data[index:])
 	auxPowData.blockchainBranch.sideMask = binary.LittleEndian.Uint32(sideMask)
 	index += 4
 
-	// 验证最后是否只剩下80字节的区块头
+	// Verify that there is only an 80-byte block header left at the end
 	extraDataLen := len(data) - index - 80
 	if extraDataLen != 0 {
 		err = errors.New("AuxPowData has unexpected data: " + strconv.Itoa(extraDataLen) +
@@ -140,11 +140,11 @@ func ParseAuxPowData(dataHex string, chainType string) (auxPowData *AuxPowData, 
 		return
 	}
 
-	// 数据合法，解析完成
+	// The data is legal and the parsing is complete
 	return
 }
 
-// ExpandingBlockchainBranch 将特定币种的MerkleBranch添加到AuxPowData.blockchainBranch
+// ExpandingBlockchainBranch Add currency-specific MerkleBranch to AuxPowData.blockchainBranch
 func (auxPowData *AuxPowData) ExpandingBlockchainBranch(extBranch merkle.MerklePath) {
 	branch := &auxPowData.blockchainBranch
 
@@ -162,7 +162,7 @@ func (auxPowData *AuxPowData) ExpandingBlockchainBranch(extBranch merkle.MerkleP
 	branch.branchs = append(extBranchItems, branch.branchs...)
 }
 
-// ToBytes 把AuxPowData转换为字节流
+// ToBytes Convert AuxPowData to byte stream
 func (auxPowData *AuxPowData) ToBytes() (data []byte) {
 
 	// parent coinbase transaction
@@ -195,7 +195,7 @@ func (auxPowData *AuxPowData) ToBytes() (data []byte) {
 	return
 }
 
-// ToHex 把AuxPowData转换为十六进制字符串
+// ToHex Convert AuxPowData to hexadecimal string
 func (auxPowData *AuxPowData) ToHex() string {
 	return hex.EncodeToString(auxPowData.ToBytes())
 }

@@ -16,136 +16,136 @@ import (
 	"github.com/samuel/go-zookeeper/zk"
 )
 
-// BTCAgent的客户端类型前缀
+// Client type prefix of BTCAgent
 const btcAgentClientTypePrefix = "btccom-agent/"
 
-// NiceHash的客户端类型前缀
+// NiceHash client type prefix
 const niceHashClientTypePrefix = "nicehash/"
 
-// NiceHash Ethereum Stratum Protocol 的协议类型前缀
+// NiceHash Ethereum Stratum Protocol The protocol type prefix of
 const ethereumStratumNiceHashPrefix = "ethereumstratum/"
 
-// 响应中使用的 NiceHash Ethereum Stratum Protocol 的版本
+// The version of NiceHash Ethereum Stratum Protocol used in the response
 const ethereumStratumNiceHashVersion = "EthereumStratum/1.0.0"
 
-// 发送给sserver的ETHProxy协议版本字符串
+// sendETHProxy protocol version string sent to sserver
 const ethproxyVersion = "ETHProxy/1.0.0"
 
-// BTCAgent的ex-message的magic number
+// The magic number of BTCAgent's ex-message
 const btcAgentExMessageMagicNumber = 0x7F
 
 // 协议检测超时时间
 const protocolDetectTimeoutSeconds = 15
 
-// 矿工名获取超时时间
+// Miner name get timeout
 const findWorkerNameTimeoutSeconds = 60
 
-// 服务器响应subscribe、authorize等消息的超时时间
+// The timeout time for the server to respond to messages such as subscribe and authorize
 const readServerResponseTimeoutSeconds = 10
 
-// 纯代理模式下接收消息的超时时间
-// 若长时间接收不到消息，就无法及时处理对端已断开事件，
-// 因此设置接收超时时间，每隔一定时间就放弃接收，检查状态，并重新开始接收
+// Timeout for receiving messages in pure proxy mode
+// If the message cannot be received for a long time, the peer disconnection event cannot be processed in time.
+// Therefore, set the receiving timeout time, give up receiving every certain time, check the status, and restart receiving
 const receiveMessageTimeoutSeconds = 15
 
-// 服务器断开连接时的重试次数
+// The number of retries when the server disconnects
 const retryTimeWhenServerDown = 10
 
-// 创建的 bufio Reader 的 buffer 大小
+// The buffer size of the created bufio Reader
 const bufioReaderBufSize = 128
 
-// ProtocolType 代理的协议类型
+// ProtocolType Proxy's protocol type
 type ProtocolType uint8
 
 const (
-	// ProtocolBitcoinStratum 比特币Stratum协议
+	// ProtocolBitcoinStratum Bitcoin Stratum Protocol
 	ProtocolBitcoinStratum ProtocolType = iota
-	// ProtocolEthereumStratum 以太坊普通Stratum协议
+	// ProtocolEthereumStratum Ethereum Ordinary Stratum Protocol
 	ProtocolEthereumStratum
-	// ProtocolEthereumStratumNiceHash NiceHash建议的以太坊Stratum协议
+	// ProtocolEthereumStratumNiceHash The Ethereum Stratum protocol proposed by NiceHash
 	ProtocolEthereumStratumNiceHash
-	// ProtocolEthereumProxy EthProxy软件实现的以太坊Stratum协议
+	// ProtocolEthereumProxy Ethereum Stratum protocol implemented by EthProxy software
 	ProtocolEthereumProxy
-	// ProtocolUnknown 未知协议（无法处理）
+	// ProtocolUnknown Unknown protocol (cannot be processed)
 	ProtocolUnknown
 )
 
-// RunningStat 运行状态
+// RunningStat Operating status
 type RunningStat uint8
 
 const (
-	// StatRunning 正在运行
+	// StatRunning running
 	StatRunning RunningStat = iota
-	// StatStoped 已停止
+	// StatStoped stopped
 	StatStoped RunningStat = iota
-	// StatReconnecting 正在重连服务器
+	// StatReconnecting Reconnecting to server
 	StatReconnecting RunningStat = iota
 )
 
-// AuthorizeStat 认证状态
+// AuthorizeStat Certification status
 type AuthorizeStat uint8
 
 const (
-	// StatConnected 已连接（默认状态）
+	// StatConnected connected (default state)
 	StatConnected AuthorizeStat = iota
-	// StatSubScribed 已订阅
+	// StatSubScribed subscribed
 	StatSubScribed
-	// StatAuthorized 已认证
+	// StatAuthorized verified
 	StatAuthorized
 )
 
-// StratumSession 是一个 Stratum 会话，包含了到客户端和到服务端的连接及状态信息
+// StratumSession is a Stratum session that contains connection and status information to the client and to the server
 type StratumSession struct {
-	// 会话管理器
+	// session manager
 	manager *StratumSessionManager
 
-	// Stratum协议类型
+	// Stratum protocol type
 	protocolType ProtocolType
-	// 是否为BTCAgent
+	// Is it BTCAgent
 	isBTCAgent bool
-	// 是否为NiceHash客户端
+	// Is it a NiceHash client
 	isNiceHashClient bool
-	// JSON-RPC的版本
+	// JSON-RPC version
 	jsonRPCVersion int
-	// 比特币版本掩码(用于AsicBoost)
+	// Bitcoin version mask(for AsicBoost)
 	versionMask uint32
 
-	// 是否在运行
+	// is it running
 	runningStat RunningStat
-	// 服务器重连计数器
+	// Server reconnection counter
 	reconnectCounter uint32
-	// 改变runningStat和switchCoinCount时要加的锁
+	// The lock to be added when changing runningStat and switchCoinCount
 	lock sync.Mutex
 
 	clientConn   net.Conn
 	clientReader *bufio.Reader
 
-	// 客户端IP地址及端口
+	// Client IP address and port
 	clientIPPort string
 
 	serverConn   net.Conn
 	serverReader *bufio.Reader
 
-	// sessionID 会话ID，也做为矿机挖矿时的 Extranonce1
+	// sessionID Session ID, also used as Extranonce1 when mining machine
 	sessionID       uint32
 	sessionIDString string
 
-	fullWorkerName   string // 完整的矿工名
-	subaccountName   string // 子账户名部分
-	minerNameWithDot string // 矿机名部分（包含前导“.”）
+	fullWorkerName   string // full miner name
+	subaccountName   string // Sub account name part
+	minerNameWithDot string // Miner name part (including leading ".")
 
 	stratumSubscribeRequest *JSONRPCRequest
 	stratumAuthorizeRequest *JSONRPCRequest
 
-	// 用户所挖的币种
+	// The currency mined by the user
 	miningCoin string
-	// 监控的Zookeeper路径
+	// Monitored Zookeeper paths
 	zkWatchPath string
-	// 监控的Zookeeper事件
+	// Monitored Zookeeper events
 	zkWatchEvent <-chan zk.Event
 }
 
-// NewStratumSession 创建一个新的 Stratum 会话
+// NewStratumSession Create a new Stratum session
 func NewStratumSession(manager *StratumSessionManager, clientConn net.Conn, sessionID uint32) (session *StratumSession) {
 	session = new(StratumSession)
 
@@ -180,7 +180,7 @@ func NewStratumSession(manager *StratumSessionManager, clientConn net.Conn, sess
 	return
 }
 
-// IsRunning 检查会话是否在运行（线程安全）
+// IsRunning Check if session is running (thread safe)
 func (session *StratumSession) IsRunning() bool {
 	session.lock.Lock()
 	defer session.lock.Unlock()
@@ -188,19 +188,19 @@ func (session *StratumSession) IsRunning() bool {
 	return session.runningStat != StatStoped
 }
 
-// setStat 设置会话状态（线程安全）
+// setStat Set session state (thread safe)
 func (session *StratumSession) setStat(stat RunningStat) {
 	session.lock.Lock()
 	session.runningStat = stat
 	session.lock.Unlock()
 }
 
-// setStatNonLock 设置会话状态（
+// setStatNonLock set session state (
 func (session *StratumSession) setStatNonLock(stat RunningStat) {
 	session.runningStat = stat
 }
 
-// getStat 获取会话状态（线程安全）
+// getStat Get session state (thread safe)
 func (session *StratumSession) getStat() RunningStat {
 	session.lock.Lock()
 	defer session.lock.Unlock()
@@ -208,12 +208,12 @@ func (session *StratumSession) getStat() RunningStat {
 	return session.runningStat
 }
 
-// getStatNonLock 获取会话状态（无锁，非线程安全，用于在已加锁函数内部调用）
+// getStatNonLock Get session state (lock-free, not thread-safe, for calls inside locked functions)
 func (session *StratumSession) getStatNonLock() RunningStat {
 	return session.runningStat
 }
 
-// getReconnectCounter 获取币种切换计数（线程安全）
+// getReconnectCounter Get currency switch count (thread safe)
 func (session *StratumSession) getReconnectCounter() uint32 {
 	session.lock.Lock()
 	defer session.lock.Unlock()
@@ -221,7 +221,7 @@ func (session *StratumSession) getReconnectCounter() uint32 {
 	return session.reconnectCounter
 }
 
-// Run 启动一个 Stratum 会话
+// Run Start a Stratum session
 func (session *StratumSession) Run() {
 	session.lock.Lock()
 
@@ -235,8 +235,8 @@ func (session *StratumSession) Run() {
 
 	session.protocolType = session.protocolDetect()
 
-	// 其实目前只有一种协议，即Stratum协议
-	// BTCAgent在认证完成之前走的也是Stratum协议
+	// In fact, there is currently only one protocol, the Stratum protocol.
+	// BTCAgent also walks the Stratum protocol before the authentication is completed
 	if session.protocolType == ProtocolUnknown {
 		session.Stop()
 		return
@@ -245,7 +245,7 @@ func (session *StratumSession) Run() {
 	session.runProxyStratum()
 }
 
-// Resume 恢复一个Stratum会话
+// Resume Resume a Stratum session
 func (session *StratumSession) Resume(sessionData StratumSessionData, serverConn net.Conn) {
 	session.lock.Lock()
 
@@ -257,15 +257,15 @@ func (session *StratumSession) Resume(sessionData StratumSessionData, serverConn
 	session.runningStat = StatRunning
 	session.lock.Unlock()
 
-	// 设置默认协议
+	// Set default protocol
 	session.protocolType = session.getDefaultStratumProtocol()
 
-	// 恢复服务器连接
+	// restore server connection
 	session.serverConn = serverConn
 	session.serverReader = bufio.NewReaderSize(serverConn, bufioReaderBufSize)
 	stat := StatConnected
 
-	// 恢复版本位
+	// restore version bit
 	session.versionMask = sessionData.VersionMask
 
 	if sessionData.StratumSubscribeRequest != nil {
@@ -308,11 +308,11 @@ func (session *StratumSession) Resume(sessionData StratumSessionData, serverConn
 
 	glog.Info("Resume Session Success: ", session.clientIPPort, "; ", session.fullWorkerName, "; ", session.miningCoin)
 
-	// 此后转入纯代理模式
+	// Then switch to pure proxy mode
 	session.proxyStratum()
 }
 
-// Stop 停止一个 Stratum 会话
+// Stop Stop a Stratum session
 func (session *StratumSession) Stop() {
 	session.lock.Lock()
 
@@ -348,12 +348,12 @@ func (session *StratumSession) protocolDetect() ProtocolType {
 		return ProtocolUnknown
 	}
 
-	// 从客户端收到的第一个报文一定是Stratum协议的JSON字符串。
-	// BTC Agent在subscribe和authorize阶段发送的是标准Stratum协议JSON字符串，
-	// 只有在authorize完成之后才可能出现ex-message。
+	// BTC Agent sends standard Stratum protocol JSON strings during the subscribe and authorize phases.
+	// The first message received from the client must be a JSON string of the Stratum protocol.
+	// The ex-message may appear only after authorize is complete.
 	//
-	// 这也就是说，一方面，BTC Agent可以和普通矿机共享连接和认证流程，
-	// 另一方面，我们无法在最开始就检测出客户端是BTC Agent，我们要随时做好收到ex-message的准备。
+	// That is to say, on the one hand, BTC Agent can share the connection and authentication process with ordinary miners,
+	// On the other hand, we cannot detect that the client is a BTC Agent at the very beginning, and we have to be ready to receive ex-message at any time.
 	if magicNumber[0] != '{' {
 		glog.Warning("Unknown Protocol")
 		return ProtocolUnknown
@@ -373,7 +373,7 @@ func (session *StratumSession) getDefaultStratumProtocol() ProtocolType {
 	case ChainTypeDecredNormal:
 		fallthrough
 	case ChainTypeDecredGoMiner:
-		// DCR使用与比特币几乎完全相同的协议
+		// DCR uses almost the exact same protocol as Bitcoin
 		return ProtocolBitcoinStratum
 	case ChainTypeEthereum:
 		// This is the default protocol. The protocol may change after further detection.
@@ -409,15 +409,15 @@ func (session *StratumSession) runProxyStratum() {
 		return
 	}
 
-	// 此后转入纯代理模式
+	// Then switch to pure proxy mode
 	session.proxyStratum()
 }
 
 func (session *StratumSession) parseSubscribeRequest(request *JSONRPCRequest) (result interface{}, err *StratumError) {
-	// 保存原始订阅请求以便转发给Stratum服务器
+	// Save the original subscription request for forwarding to the Stratum server
 	session.stratumSubscribeRequest = request
 
-	// 生成响应
+	// generate response
 	switch session.manager.chainType {
 	case ChainTypeBitcoin:
 		fallthrough
@@ -426,7 +426,7 @@ func (session *StratumSession) parseSubscribeRequest(request *JSONRPCRequest) (r
 	case ChainTypeDecredGoMiner:
 		if len(request.Params) >= 1 {
 			userAgent, ok := session.stratumSubscribeRequest.Params[0].(string)
-			// 判断是否为BTCAgent
+			// Determine whether it is BTCAgent
 			if ok && strings.HasPrefix(strings.ToLower(userAgent), btcAgentClientTypePrefix) {
 				session.isBTCAgent = true
 			}
@@ -442,11 +442,11 @@ func (session *StratumSession) parseSubscribeRequest(request *JSONRPCRequest) (r
 		if len(request.Params) >= 1 {
 			userAgent, ok := session.stratumSubscribeRequest.Params[0].(string)
 			if ok {
-				// 判断是否为NiceHash客户端
+				// Determine if it is a NiceHash client
 				if strings.HasPrefix(strings.ToLower(userAgent), niceHashClientTypePrefix) {
 					session.isNiceHashClient = true
 				}
-				// 判断是否为BTCAgent
+				// Determine whether it is BTCAgent
 				if strings.HasPrefix(strings.ToLower(userAgent), btcAgentClientTypePrefix) {
 					session.isBTCAgent = true
 					session.protocolType = ProtocolEthereumStratumNiceHash
@@ -458,7 +458,7 @@ func (session *StratumSession) parseSubscribeRequest(request *JSONRPCRequest) (r
 			// message example: {"id":1,"method":"mining.subscribe","params":["ethminer 0.15.0rc1","EthereumStratum/1.0.0"]}
 			protocol, ok := session.stratumSubscribeRequest.Params[1].(string)
 
-			// 判断是否为"EthereumStratum/xxx"
+			// "EthereumStratum/xxx"
 			if ok && strings.HasPrefix(strings.ToLower(protocol), ethereumStratumNiceHashPrefix) {
 				session.protocolType = ProtocolEthereumStratumNiceHash
 			}
@@ -468,7 +468,7 @@ func (session *StratumSession) parseSubscribeRequest(request *JSONRPCRequest) (r
 		if session.protocolType == ProtocolEthereumStratumNiceHash {
 			extraNonce := session.sessionIDString
 			if session.isNiceHashClient {
-				// NiceHash以太坊客户端目前仅支持不超过2字节的ExtraNonce
+				// NiceHash Ethereum client currently only supports ExtraNonces up to 2 bytes
 				extraNonce = extraNonce[0:4]
 			}
 
@@ -485,15 +485,15 @@ func (session *StratumSession) parseSubscribeRequest(request *JSONRPCRequest) (r
 }
 
 func (session *StratumSession) makeSubscribeMessageForEthProxy() {
-	// 为ETHProxy协议生成一个订阅请求
-	// 该订阅请求是为了向sserver发送session id、矿机IP等需要而创建的
+	// Generate a subscription request for the ETHProxy protocol
+	// This subscription request is created to send session id, miner IP, etc. to sserver
 	session.stratumSubscribeRequest = new(JSONRPCRequest)
 	session.stratumSubscribeRequest.Method = "mining.subscribe"
 	session.stratumSubscribeRequest.SetParam("ETHProxy", ethproxyVersion)
 }
 
 func (session *StratumSession) parseAuthorizeRequest(request *JSONRPCRequest) (result interface{}, err *StratumError) {
-	// 保存原始请求以便转发给Stratum服务器
+	// Save the original request for forwarding to the Stratum server
 	session.stratumAuthorizeRequest = request
 
 	// STRATUM / NICEHASH_STRATUM:        {"id":3, "method":"mining.authorize", "params":["test.aaa", "x"]}
@@ -513,10 +513,10 @@ func (session *StratumSession) parseAuthorizeRequest(request *JSONRPCRequest) (r
 		return
 	}
 
-	// 矿工名
+	// miner name
 	session.fullWorkerName = FilterWorkerName(fullWorkerName)
 
-	// 以太坊矿工名中可能包含钱包地址，且矿工名本身可能位于附加的worker字段
+	// Ethereum miner names may contain wallet addresses, and the miner name itself may be in an additional worker field
 	if session.protocolType != ProtocolBitcoinStratum {
 		if request.Worker != "" {
 			session.fullWorkerName += "." + FilterWorkerName(request.Worker)
@@ -525,7 +525,7 @@ func (session *StratumSession) parseAuthorizeRequest(request *JSONRPCRequest) (r
 	}
 
 	if strings.Contains(session.fullWorkerName, ".") {
-		// 截取“.”之前的做为子账户名，“.”及之后的做矿机名
+		// Intercept before "." as the sub-account name, "." and after as the mining machine name
 		pos := strings.Index(session.fullWorkerName, ".")
 		session.subaccountName = session.manager.GetRegularSubaccountName(session.fullWorkerName[:pos])
 		session.minerNameWithDot = session.fullWorkerName[pos:]
@@ -541,8 +541,8 @@ func (session *StratumSession) parseAuthorizeRequest(request *JSONRPCRequest) (r
 		return
 	}
 
-	// 获取矿机名成功，但此处不需要返回内容给矿机
-	// 连接服务器后会将服务器发送的响应返回给矿机
+	// Obtaining the name of the miner is successful, but there is no need to return the content to the miner here
+	// After connecting to the server, the response sent by the server will be returned to the miner
 	result = nil
 	err = nil
 	return
@@ -572,15 +572,15 @@ func (session *StratumSession) parseConfigureRequest(request *JSONRPCRequest) (r
 	}
 
 	if session.versionMask != 0 {
-		// 这里响应的是虚假的版本掩码。在连接服务器后将通过 mining.set_version_mask
-		// 更新为真实的版本掩码。
+		// The response here is a fake version mask. After connecting to the server will pass mining.set_version_mask
+		// Update to the real version mask.
 		result = JSONRPCObj{
 			"version-rolling":      true,
 			"version-rolling.mask": session.getVersionMaskStr()}
 		return
 	}
 
-	// 未知配置内容，不响应
+	// Unknown configuration content, no response
 	return
 }
 
@@ -637,7 +637,7 @@ func (session *StratumSession) stratumFindWorkerName() error {
 
 		stat := StatConnected
 
-		// 循环结束说明认证成功
+		// The end of the cycle indicates that the authentication is successful
 		for stat != StatAuthorized {
 			requestJSON, err := session.clientReader.ReadBytes('\n')
 
@@ -659,7 +659,7 @@ func (session *StratumSession) stratumFindWorkerName() error {
 			// stat will be changed in stratumHandleRequest
 			result, stratumErr := session.stratumHandleRequest(request, &stat)
 
-			// 两个均为空说明没有想要返回的响应
+			// Both are empty indicating that there is no response you want to return
 			if result != nil || stratumErr != nil {
 				response.ID = request.ID
 				response.Result = result
@@ -674,7 +674,7 @@ func (session *StratumSession) stratumFindWorkerName() error {
 			}
 		} // for
 
-		// 发送一个空错误表示成功
+		// Send an empty error to indicate success
 		e <- nil
 		return
 	}()
@@ -698,7 +698,7 @@ func (session *StratumSession) stratumFindWorkerName() error {
 }
 
 func (session *StratumSession) findMiningCoin(autoReg bool) error {
-	// 从zookeeper读取用户想挖的币种
+	// Read the currency the user wants to mine from zookeeper
 	session.zkWatchPath = session.manager.zookeeperSwitcherWatchDir + session.subaccountName
 	data, event, err := session.manager.zookeeperManager.GetW(session.zkWatchPath, session.sessionID)
 
@@ -733,16 +733,16 @@ func (session *StratumSession) tryAutoReg() error {
 	autoRegWatchPath := session.manager.zookeeperAutoRegWatchDir + session.subaccountName
 	_, event, err := session.manager.zookeeperManager.GetW(autoRegWatchPath, session.sessionID)
 	if err != nil {
-		// 检查自动注册等待人数是否超限
+		// Check whether the automatic registration wait number exceeds the limit
 		if atomic.LoadInt64(&session.manager.autoRegAllowUsers) < 1 {
 			glog.Warning("Too much pending auto reg request. worker: ", session.fullWorkerName)
 			return ErrTooMuchPendingAutoRegReq
 		}
-		// 没有加锁，大并发时允许短暂的超过上限。减小到负值是安全的
+		// There is no lock, and the upper limit is allowed to be exceeded briefly during large concurrency. It is safe to reduce to a negative value
 		atomic.AddInt64(&session.manager.autoRegAllowUsers, -1)
 		defer atomic.AddInt64(&session.manager.autoRegAllowUsers, 1)
 
-		//--------- 提交全新的自动注册请求 ---------
+		//--------- Submit a new auto-enrollment request ---------
 
 		type autoRegInfo struct {
 			SessionID uint32
@@ -771,9 +771,9 @@ func (session *StratumSession) tryAutoReg() error {
 }
 
 func (session *StratumSession) connectStratumServer() error {
-	// 获取当前运行状态
+	// Get current running status
 	runningStat := session.getStatNonLock()
-	// 寻找币种对应的服务器
+	// Find the server corresponding to the currency
 	serverInfo, ok := session.manager.stratumServerInfoMap[session.miningCoin]
 
 	var rpcID interface{}
@@ -781,7 +781,7 @@ func (session *StratumSession) connectStratumServer() error {
 		rpcID = session.stratumAuthorizeRequest.ID
 	}
 
-	// 对应的服务器不存在
+	// The corresponding server does not exist
 	if !ok {
 		glog.Error("Stratum Server Not Found: ", session.miningCoin)
 		if runningStat != StatReconnecting {
@@ -791,7 +791,7 @@ func (session *StratumSession) connectStratumServer() error {
 		return StratumErrStratumServerNotFound
 	}
 
-	// 连接服务器
+	// connect to the server
 	serverConn, err := net.Dial("tcp", serverInfo.URL)
 
 	if err != nil {
@@ -813,13 +813,13 @@ func (session *StratumSession) connectStratumServer() error {
 	return session.serverSubscribeAndAuthorize()
 }
 
-// 发送 mining.configure
+// send mining.configure
 func (session *StratumSession) sendMiningConfigureToServer() (err error) {
 	if session.versionMask == 0 {
 		return
 	}
 
-	// 请求 version mask
+	// ask version mask
 	request := JSONRPCRequest{
 		"configure",
 		"mining.configure",
@@ -831,23 +831,23 @@ func (session *StratumSession) sendMiningConfigureToServer() (err error) {
 	return
 }
 
-// 发送 mining.subscribe
+// send mining.subscribe
 func (session *StratumSession) sendMiningSubscribeToServer() (userAgent string, protocol string, err error) {
 	userAgent = "stratumSwitcher"
 	protocol = "Stratum"
 
-	// 拷贝一个对象
+	// copy an object
 	request := session.stratumSubscribeRequest
 	request.ID = "subscribe"
 
-	// 发送订阅消息给服务器
+	// Send subscription message to server
 	switch session.protocolType {
 	case ProtocolBitcoinStratum:
-		// 为请求添加sessionID
+		// Add sessionID to request
 		// API格式：mining.subscribe("user agent/version", "extranonce1")
 		// <https://en.bitcoin.it/wiki/Stratum_mining_protocol>
 
-		// 获取原始的参数1（user agent）
+		// get the original parameter 1（user agent）
 		if len(session.stratumSubscribeRequest.Params) >= 1 {
 			userAgent, _ = session.stratumSubscribeRequest.Params[0].(string)
 		}
@@ -855,10 +855,10 @@ func (session *StratumSession) sendMiningSubscribeToServer() (userAgent string, 
 			glog.Info("UserAgent: ", userAgent)
 		}
 
-		// 为了保证Web侧“最近提交IP”显示正确，将矿机的IP做为第三个参数传递给Stratum Server
+		// In order to ensure the correct display of "Recently Submitted IP" on the web side, pass the IP of the miner as the third parameter to Stratum Server
 		clientIP := session.clientIPPort[:strings.LastIndex(session.clientIPPort, ":")]
 		clientIPLong := IP2Long(clientIP)
-		// 不直接使用 session.sessionIDString，因为在DCR币种里，它已经进行了填充和字节序颠倒。
+		// Do not use session.sessionIDString directly, because in DCR currency, it has already been padded and reversed.
 		sessionIDString := Uint32ToHex(session.sessionID)
 		session.stratumSubscribeRequest.SetParam(userAgent, sessionIDString, clientIPLong)
 
@@ -867,7 +867,7 @@ func (session *StratumSession) sendMiningSubscribeToServer() (userAgent string, 
 	case ProtocolEthereumStratumNiceHash:
 		fallthrough
 	case ProtocolEthereumProxy:
-		// 获取原始的参数1（user agent）和参数2（protocol，可能存在）
+		// Get the original parameter 1 (user agent) and parameter 2 (protocol, may exist)
 		if len(session.stratumSubscribeRequest.Params) >= 1 {
 			userAgent, _ = session.stratumSubscribeRequest.Params[0].(string)
 		}
@@ -881,8 +881,8 @@ func (session *StratumSession) sendMiningSubscribeToServer() (userAgent string, 
 		clientIP := session.clientIPPort[:strings.LastIndex(session.clientIPPort, ":")]
 		clientIPLong := IP2Long(clientIP)
 
-		// Session ID 做为第三个参数传递
-		// 矿机IP做为第四个参数传递
+		// Session ID is passed as the third parameter
+		// The miner IP is passed as the fourth parameter
 		session.stratumSubscribeRequest.SetParam(userAgent, protocol, session.sessionIDString, clientIPLong)
 
 	default:
@@ -891,8 +891,8 @@ func (session *StratumSession) sendMiningSubscribeToServer() (userAgent string, 
 		return
 	}
 
-	// 发送mining.subscribe请求给服务器
-	// sessionID已包含在其中，一并发送给服务器
+	// Send a mining.subscribe request to the server
+	// The sessionID is already included and sent to the server
 	_, err = session.writeJSONRequestToServer(session.stratumSubscribeRequest)
 	if err != nil {
 		glog.Warning("Write Subscribe Request Failed: ", err)
@@ -900,7 +900,7 @@ func (session *StratumSession) sendMiningSubscribeToServer() (userAgent string, 
 	return
 }
 
-// 获取认证时添加的子账户名后缀
+// Sub-account name suffix added when obtaining authentication
 func (session *StratumSession) getUserSuffix() string {
 	serverInfo, ok := session.manager.stratumServerInfoMap[session.miningCoin]
 	if !ok {
@@ -910,37 +910,37 @@ func (session *StratumSession) getUserSuffix() string {
 	return serverInfo.UserSuffix
 }
 
-// 发送 mining.subscribe
+// send mining.subscribe
 func (session *StratumSession) sendMiningAuthorizeToServer(withSuffix bool) (authWorkerName string, authWorkerPasswd string, err error) {
 	if withSuffix {
-		// 带币种后缀的矿机名
+		// Miner name with coin suffix
 		authWorkerName = session.subaccountName + "_" + session.getUserSuffix() + session.minerNameWithDot
 	} else {
-		// 无币种后缀的矿工名
+		// Miner name without currency suffix
 		authWorkerName = session.fullWorkerName
 	}
 
 	var request JSONRPCRequest
 	request.Method = session.stratumAuthorizeRequest.Method
 	request.Params = make([]interface{}, len(session.stratumAuthorizeRequest.Params))
-	// 深拷贝，防止这里参数的更改影响到session.stratumAuthorizeRequest的内容
+	// Deep copy to prevent changes to this parameter from affecting the content of session.stratumAuthorizeRequest
 	copy(request.Params, session.stratumAuthorizeRequest.Params)
 
-	// 矿机发来的密码，仅用于返回
+	// The password sent by the miner, only used for return
 	if len(request.Params) >= 2 {
 		authWorkerPasswd, _ = request.Params[1].(string)
 	}
 
-	// 设置为无币种后缀的矿工名
+	//Set to miner name without currency suffix
 	request.Params[0] = authWorkerName
 	request.ID = "auth"
-	// 发送mining.authorize请求给服务器
+	// Send a mining.authorize request to the server
 	_, err = session.writeJSONRequestToServer(&request)
 	return
 }
 
 func (session *StratumSession) serverSubscribeAndAuthorize() (err error) {
-	// 发送请求
+	// send request
 	err = session.sendMiningConfigureToServer()
 	if err != nil {
 		return
@@ -954,7 +954,7 @@ func (session *StratumSession) serverSubscribeAndAuthorize() (err error) {
 		return
 	}
 
-	// 接收响应
+	// receive response
 	e := make(chan error, 1)
 	go func() {
 		defer close(e)
@@ -965,7 +965,7 @@ func (session *StratumSession) serverSubscribeAndAuthorize() (err error) {
 		authMsgCounter := 0
 		authSuccess := false
 
-		// 循环结束说明认证完成
+		// The end of the cycle indicates that the authentication is complete
 		for authMsgCounter < 2 {
 			json, err := session.serverReader.ReadBytes('\n')
 
@@ -974,9 +974,9 @@ func (session *StratumSession) serverSubscribeAndAuthorize() (err error) {
 				return
 			}
 
-			// 服务器返回的JSON RPC响应
+			// JSON RPC response returned by the server
 			response, err := NewJSONRPCResponse(json)
-			// JSON解析在类型完全不匹配时也不会失败。ID为空说明是notify
+			// JSON parsing also doesn't fail when the types don't match at all. If the ID is empty, it means notify
 			if err == nil && response.ID != nil {
 				err = session.stratumHandleServerResponse(response, &authMsgCounter, &authSuccess, &authResponse)
 				if err != nil {
@@ -984,7 +984,7 @@ func (session *StratumSession) serverSubscribeAndAuthorize() (err error) {
 					return
 				}
 
-				// 首次认证(无币种后缀)不成功，发送第二次认证请求(带币种后缀)
+				// If the first authentication (without currency suffix) is unsuccessful, send the second authentication request (with currency suffix)
 				if !authSuccess && authMsgCounter == 1 {
 					authWorkerName, authWorkerPasswd, err = session.sendMiningAuthorizeToServer(true)
 					if err != nil {
@@ -998,7 +998,7 @@ func (session *StratumSession) serverSubscribeAndAuthorize() (err error) {
 				glog.Info("JSON RPC Response decode failed: ", err.Error(), string(json))
 			}
 
-			// 服务器推送的JSON RPC通知
+			// Server Pushed JSON RPC Notifications
 			notify, err := NewJSONRPCRequest(json)
 			if err == nil {
 				err = session.stratumHandleServerNotify(notify, &allowedVersionMask)
@@ -1013,7 +1013,7 @@ func (session *StratumSession) serverSubscribeAndAuthorize() (err error) {
 			}
 		} // for
 
-		// 发送认证响应给矿机
+		// Send authentication response to miner
 		authResponse.ID = session.stratumAuthorizeRequest.ID
 		_, err = session.writeJSONResponseToClient(&authResponse)
 		if err != nil {
@@ -1021,7 +1021,7 @@ func (session *StratumSession) serverSubscribeAndAuthorize() (err error) {
 			return
 		}
 
-		// 发送 version mask 更新
+		// Send version mask updates
 		if authSuccess && session.versionMask != 0 {
 			allowedVersionMask &= session.versionMask
 			notify := JSONRPCRequest{
@@ -1039,7 +1039,7 @@ func (session *StratumSession) serverSubscribeAndAuthorize() (err error) {
 		if !authSuccess {
 			err = errors.New("Authorize Failed for Server")
 		}
-		// 发送认证结果，nil表示成功
+		// Send the authentication result, nil means success
 		e <- err
 		return
 	}()
@@ -1068,7 +1068,7 @@ func (session *StratumSession) serverSubscribeAndAuthorize() (err error) {
 	return
 }
 
-// 处理服务器通知
+// Handling server notifications
 func (session *StratumSession) stratumHandleServerNotify(notify *JSONRPCRequest, allowedVersionMask *uint32) (err error) {
 	switch notify.Method {
 	case "mining.set_version_mask":
@@ -1084,7 +1084,7 @@ func (session *StratumSession) stratumHandleServerNotify(notify *JSONRPCRequest,
 	return
 }
 
-// 处理服务器响应
+// Handling server responses
 func (session *StratumSession) stratumHandleServerResponse(response *JSONRPCResponse, authMsgCounter *int, authSuccess *bool, authResponse *JSONRPCResponse) (err error) {
 	id, ok := response.ID.(string)
 	if !ok {
@@ -1107,21 +1107,21 @@ func (session *StratumSession) stratumHandleServerResponse(response *JSONRPCResp
 		}
 		if success {
 			*authSuccess = true
-			*authMsgCounter = 2 // 认证已成功，不再需要发送后续认证请求
+			*authMsgCounter = 2 // Authentication has succeeded, no further authentication requests need to be sent
 		}
 	}
 	return
 }
 
-// 处理服务器认证响应
+// Handling server authentication responses
 func (session *StratumSession) stratumHandleServerAuthorizeResponse(response *JSONRPCResponse) bool {
 	success, ok := response.Result.(bool)
 	return ok && success
 }
 
-// 处理服务器订阅响应
+// Handling server subscription responses
 func (session *StratumSession) stratumHandleServerSubscribeResponse(response *JSONRPCResponse) error {
-	// 检查服务器返回的订阅结果
+	// Check the subscription result returned by the server
 	switch session.protocolType {
 	case ProtocolBitcoinStratum:
 		result, ok := response.Result.([]interface{})
@@ -1140,7 +1140,7 @@ func (session *StratumSession) stratumHandleServerSubscribeResponse(response *JS
 			return ErrParseSubscribeResponseFailed
 		}
 
-		// 服务器返回的 sessionID 与当前保存的不一致，此时挖到的所有share都会是无效的，断开连接
+		// returned by the server The sessionID is inconsistent with the currently saved, all the shares dug up at this time will be invalid, and the connection will be disconnected
 		if sessionID != session.sessionIDString {
 			glog.Warning("Session ID Mismatched:  ", sessionID, " != ", session.sessionIDString)
 			return ErrSessionIDInconformity
@@ -1179,7 +1179,7 @@ func (session *StratumSession) stratumHandleServerSubscribeResponse(response *JS
 			return ErrParseSubscribeResponseFailed
 		}
 
-		// 服务器返回的 sessionID 与当前保存的不一致，此时挖到的所有share都会是无效的，断开连接
+		// The sessionID returned by the server is inconsistent with the currently saved session ID. All shares mined at this time will be invalid and the connection will be disconnected.
 		if sessionID != session.sessionIDString {
 			glog.Warning("Session ID Mismatched:  ", sessionID, " != ", session.sessionIDString)
 			return ErrSessionIDInconformity
@@ -1215,35 +1215,35 @@ func (session *StratumSession) proxyStratum() {
 		return
 	}
 
-	// 注册会话
+	// Register for a session
 	session.manager.RegisterStratumSession(session)
 
-	// 从服务器到客户端
+	// From server to client
 	go func() {
-		// 记录当前的币种切换计数
+		// Record the current currency switch count
 		currentReconnectCounter := session.getReconnectCounter()
 
 		if session.serverReader != nil {
 			bufLen := session.serverReader.Buffered()
-			// 将bufio中的剩余内容写入对端
+			// Write the remaining content in bufio to the peer
 			if bufLen > 0 {
 				buf := make([]byte, bufLen)
 				session.serverReader.Read(buf)
 				session.clientConn.Write(buf)
 			}
-			// 释放bufio
+			// release bufio
 			session.serverReader = nil
 		}
-		// 简单的流复制
+		// simple streaming replication
 		buffer := make([]byte, bufioReaderBufSize)
 		_, err := IOCopyBuffer(session.clientConn, session.serverConn, buffer)
-		// 流复制结束，说明其中一方关闭了连接
-		// 不对BTCAgent应用重连
+		// Streaming replication ends, indicating that one of the parties has closed the connection
+		// Do not reconnect to the BTCAgent application
 		if err == ErrReadFailed && !session.isBTCAgent {
 			// 服务器关闭了连接，尝试重连
 			session.tryReconnect(currentReconnectCounter)
 		} else {
-			// 客户端关闭了连接，结束会话
+			// The client closed the connection, ending the session
 			session.tryStop(currentReconnectCounter)
 		}
 		if glog.V(3) {
@@ -1251,37 +1251,37 @@ func (session *StratumSession) proxyStratum() {
 		}
 	}()
 
-	// 从客户端到服务器
+	// From client to server
 	go func() {
-		// 记录当前的币种切换计数
+		// Record the current currency switch count
 		currentReconnectCounter := session.getReconnectCounter()
 
 		if session.clientReader != nil {
 			bufLen := session.clientReader.Buffered()
-			// 将bufio中的剩余内容写入对端
+			// Write the remaining content in bufio to the peer
 			if bufLen > 0 {
 				buf := make([]byte, bufLen)
 				session.clientReader.Read(buf)
 				session.serverConn.Write(buf)
 			}
-			// 释放bufio
+			// release bufio
 			session.clientReader = nil
 		}
-		// 简单的流复制
+		// simple streaming replication
 		buffer := make([]byte, bufioReaderBufSize)
 		bufferLen, err := IOCopyBuffer(session.serverConn, session.clientConn, buffer)
-		// 流复制结束，说明其中一方关闭了连接
-		// 不对BTCAgent应用重连
+		// Streaming replication ends, indicating that one of the parties has closed the connection
+		// Do not reconnect to the BTCAgent application
 		if err == ErrWriteFailed && !session.isBTCAgent {
 			// 服务器关闭了连接，尝试重连
 			session.tryReconnect(currentReconnectCounter)
-			// 若重连成功，尝试将缓存中的内容转发到新服务器
-			// getStat() 会锁定到重连成功或放弃重连为止
+			// getStat() will lock until the reconnection succeeds or the reconnection is abandoned
+			// If the reconnection is successful, try to forward the content in the cache to the new server
 			if bufferLen > 0 && session.getStat() == StatRunning {
 				session.serverConn.Write(buffer[0:bufferLen])
 			}
 		} else {
-			// 客户端关闭了连接，结束会话
+			// The client closed the connection, ending the session
 			session.tryStop(currentReconnectCounter)
 		}
 		if glog.V(3) {
@@ -1289,9 +1289,9 @@ func (session *StratumSession) proxyStratum() {
 		}
 	}()
 
-	// 监控来自zookeeper的切换指令并进行Stratum切换
+	// Monitor switching instructions from zookeeper and do Stratum switching
 	go func() {
-		// 记录当前的币种切换计数
+		// Record the current currency switch count
 		currentReconnectCounter := session.getReconnectCounter()
 
 		for {
@@ -1316,7 +1316,7 @@ func (session *StratumSession) proxyStratum() {
 			session.zkWatchEvent = event
 			newMiningCoin := string(data)
 
-			// 若币种未改变，则继续监控
+			// If the currency has not changed, continue monitoring
 			if newMiningCoin == session.miningCoin {
 				if glog.V(3) {
 					glog.Info("Mining Coin Not Changed: ", session.fullWorkerName, ": ", session.miningCoin, " -> ", newMiningCoin)
@@ -1324,26 +1324,26 @@ func (session *StratumSession) proxyStratum() {
 				continue
 			}
 
-			// 若币种对应的Stratum服务器不存在，则忽略事件并继续监控
+			// If the Stratum server corresponding to the currency does not exist, ignore the event and continue monitoring
 			_, exists := session.manager.stratumServerInfoMap[newMiningCoin]
 			if !exists {
 				glog.Error("Stratum Server Not Found for New Mining Coin: ", newMiningCoin)
 				continue
 			}
 
-			// 币种已改变
+			// Currency changed
 			if glog.V(2) {
 				glog.Info("Mining Coin Changed: ", session.fullWorkerName, "; ", session.miningCoin, " -> ", newMiningCoin, "; ", currentReconnectCounter)
 			}
 
-			// 进行币种切换
+			// perform currency switch
 			if session.isBTCAgent {
-				// 因为BTCAgent会话是有状态的（一个连接里包含多个AgentSession，
-				// 对应多台矿机），所以没有办法安全的无缝切换BTCAgent会话，
-				// 只能采用断开连接的方法。
+				// Because BTCAgent sessions are stateful (a connection contains multiple AgentSessions,
+				// Corresponding to multiple miners), so there is no way to safely switch BTCAgent sessions seamlessly,
+				// Only the disconnect method can be used.
 				session.tryStop(currentReconnectCounter)
 			} else {
-				// 普通连接，直接切换币种
+				// Common connection, direct currency switch
 				session.switchCoinType(newMiningCoin, currentReconnectCounter)
 			}
 			break
@@ -1355,41 +1355,41 @@ func (session *StratumSession) proxyStratum() {
 	}()
 }
 
-// 检查是否发生了重连，若未发生重连，则停止会话
+// Check if a reconnection has occurred, if not, stop the session
 func (session *StratumSession) tryStop(currentReconnectCounter uint32) bool {
 	session.lock.Lock()
 	defer session.lock.Unlock()
 
-	// 会话未在运行，不停止
+	// Session not running, not stopped
 	if session.runningStat != StatRunning {
 		return false
 	}
 
-	// 判断是否已经重连过
+	// Determine if it has been reconnected
 	if currentReconnectCounter == session.reconnectCounter {
 		//未发生重连，尝试停止
 		go session.Stop()
 		return true
 	}
 
-	// 已重连，则不进行任何操作
+	// Reconnected, do nothing
 	return false
 }
 
-// 检查是否发生了重连，若未发生重连，则尝试重连
+// Check if a reconnection has occurred, if not, try to reconnect
 func (session *StratumSession) tryReconnect(currentReconnectCounter uint32) bool {
 	session.lock.Lock()
 	defer session.lock.Unlock()
 
-	// 会话未在运行，不重连
+	// Session not running, do not reconnect
 	if session.runningStat != StatRunning {
 		return false
 	}
 
-	// 判断是否已经重连过
+	// Determine if it has been reconnected
 	if currentReconnectCounter == session.reconnectCounter {
-		//未发生重连，尝试重连
-		// 状态设为“正在重连服务器”，重连计数器加一
+		//Reconnection did not occur, try reconnection
+		// The status is set to "reconnecting to the server", and the reconnection counter is incremented by one
 		session.setStatNonLock(StatReconnecting)
 		session.reconnectCounter++
 
@@ -1401,46 +1401,46 @@ func (session *StratumSession) tryReconnect(currentReconnectCounter uint32) bool
 		return true
 	}
 
-	// 已重连，则不进行任何操作
+	// Reconnected, do nothing
 	return false
 }
 
 func (session *StratumSession) switchCoinType(newMiningCoin string, currentReconnectCounter uint32) {
-	// 设置新币种
+	// Set new currency
 	session.miningCoin = newMiningCoin
 
-	// 锁定会话，防止会话被其他线程停止
+	// Lock the session to prevent it from being stopped by other threads
 	session.lock.Lock()
 	defer session.lock.Unlock()
 
-	// 会话未在运行，放弃操作
+	// Session not running, abandon operation
 	if session.runningStat != StatRunning {
 		glog.Warning("SwitchCoinType: session not running")
 		return
 	}
-	// 会话已被其他线程重连，放弃操作
+	// The session has been reconnected by another thread, giving up the operation
 	if currentReconnectCounter != session.reconnectCounter {
 		glog.Warning("SwitchCoinType: session reconnected by other goroutine")
 		return
 	}
-	// 会话未被重连，可操作
-	// 状态设为“正在重连服务器”，重连计数器加一
+	// Session not reconnected, operational
+	// The status is set to "reconnecting to the server", and the reconnection counter is incremented by one
 	session.setStatNonLock(StatReconnecting)
 	session.reconnectCounter++
 
-	// 重连服务器
+	// reconnect server
 	session.reconnectStratumServer(retryTimeWhenServerDown)
 }
 
-// reconnectStratumServer 重连服务器
+// reconnectStratumServer reconnect server
 func (session *StratumSession) reconnectStratumServer(retryTime int) {
-	// 移除会话注册
+	// remove session registration
 	session.manager.UnRegisterStratumSession(session)
 
-	// 销毁serverReader
+	// destroy serverReader
 	if session.serverReader != nil {
 		bufLen := session.serverReader.Buffered()
-		// 将bufio中的剩余内容写入对端
+		// Write the remaining content in bufio to the peer
 		if bufLen > 0 {
 			buf := make([]byte, bufLen)
 			session.serverReader.Read(buf)
@@ -1449,18 +1449,18 @@ func (session *StratumSession) reconnectStratumServer(retryTime int) {
 		session.serverReader = nil
 	}
 
-	// 断开原服务器
+	// Disconnect the original server
 	session.serverConn.Close()
 	session.serverConn = nil
 
-	// 重新创建clientReader
+	// recreate clientReader
 	if session.clientReader == nil {
 		session.clientReader = bufio.NewReaderSize(session.clientConn, bufioReaderBufSize)
 	}
 
-	// 连接服务器
+	// connect to the server
 	var err error
-	// 至少要尝试一次，所以从-1开始
+	// At least try it once, so start with -1
 	for i := -1; i < retryTime; i++ {
 		err = session.connectStratumServer()
 		if err == nil {
@@ -1477,10 +1477,10 @@ func (session *StratumSession) reconnectStratumServer(retryTime int) {
 		return
 	}
 
-	// 回到运行状态
+	// back to running
 	session.setStatNonLock(StatRunning)
 
-	// 转入纯代理模式
+	// Switch to pure proxy mode
 	go session.proxyStratum()
 
 	if glog.V(2) {

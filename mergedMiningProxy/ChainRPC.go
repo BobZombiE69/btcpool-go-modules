@@ -8,7 +8,7 @@ import (
 	"merkle-tree-and-bitcoin/hash"
 )
 
-// AuxBlockInfo 合并挖矿的区块信息
+// AuxBlockInfo Merged mining block information
 type AuxBlockInfo struct {
 	Hash          hash.Byte32
 	ChainID       uint32
@@ -19,7 +19,7 @@ type AuxBlockInfo struct {
 	CoinbaseValue uint64
 }
 
-// RPCCallCreateAuxBlock 调用CreateAuxBlock方法
+// RPCCallCreateAuxBlock Call the CreateAuxBlock method
 func RPCCallCreateAuxBlock(rpcInfo ChainRPCInfo) (auxBlockInfo AuxBlockInfo, err error) {
 	responseJSON, err := RPCCall(rpcInfo.RPCServer, rpcInfo.CreateAuxBlock.Method, rpcInfo.CreateAuxBlock.Params)
 	if err != nil {

@@ -18,23 +18,23 @@ import (
 	_ "github.com/segmentio/kafka-go/snappy"
 )
 
-// MySQLInfo MySQL连接信息
+// MySQLInfo Mysql connection information
 type MySQLInfo struct {
 	ConnStr string
 	Table   string
 }
 
-// ChainLimit 区块链算力限制
+// ChainLimit Blockchain computing power restriction
 type ChainLimit struct {
 	MaxHashrate string
 	MySQL       MySQLInfo
 
-	name         string  // 内部使用
-	hashrate     float64 // Limit的浮点数表示，内部使用，避免重复解析字符串
-	hashrateBase float64 //币种对应的算力系数，内部使用，避免重复解析配置
+	name         string  // internal use
+	hashrate     float64 // Limit's floating point number represents, internal use, avoid repeated analysis of string
+	hashrateBase float64 //The computing power coefficient corresponding to the currency, internal use, avoid repeated analysis configuration
 }
 
-// ChainSwitcherConfig 程序配置
+// ChainSwitcherConfig Program configuration
 type ChainSwitcherConfig struct {
 	Kafka struct {
 		Brokers         []string
@@ -52,17 +52,17 @@ type ChainSwitcherConfig struct {
 	RecordLifetime        uint64
 }
 
-// ChainRecord HTTP API中的币种记录
+// ChainRecord HTTP APICurrency record
 type ChainRecord struct {
 	Coins []string `json:"coins"`
 }
 
-// ChainDispatchRecord HTTP API响应
+// ChainDispatchRecord HTTP APIresponse
 type ChainDispatchRecord struct {
 	Algorithms map[string]ChainRecord `json:"algorithms"`
 }
 
-// KafkaMessage Kafka中接收的消息结构
+// KafkaMessage Received message structure in Kafka
 type KafkaMessage struct {
 	ID                  interface{} `json:"id"`
 	Type                string      `json:"type"`
@@ -80,7 +80,7 @@ type KafkaMessage struct {
 	} `json:"host"`
 }
 
-// KafkaCommand Kafka中发送的消息结构
+// KafkaCommand Structure of messages sent in Kafka
 type KafkaCommand struct {
 	ID        interface{} `json:"id"`
 	Type      string      `json:"type"`
@@ -89,7 +89,7 @@ type KafkaCommand struct {
 	ChainName string      `json:"chain_name"`
 }
 
-// ActionFailSafeSwitch API失效切换到默认币种时记录的api_result
+// ActionFailSafeSwitch api_result logged when the API fails over to the default currency
 type ActionFailSafeSwitch struct {
 	Action         string `json:"action"`
 	LastUpdateTime int64  `json:"last_update_time"`
@@ -98,7 +98,7 @@ type ActionFailSafeSwitch struct {
 	NewChainName   string `json:"new_chain_name"`
 }
 
-// 配置数据
+// Configuration Data
 var configData *ChainSwitcherConfig
 
 var updateTime int64
@@ -112,11 +112,11 @@ var insertStmt *sql.Stmt
 var mysqlConn *sql.DB
 
 func main() {
-	// 解析命令行参数
+	// Parse command line arguments
 	configFilePath := flag.String("config", "./config.json", "Path of config file")
 	flag.Parse()
 
-	// 读取配置文件
+	// read configuration file
 	configJSON, err := ioutil.ReadFile(*configFilePath)
 
 	if err != nil {
@@ -132,7 +132,7 @@ func main() {
 		return
 	}
 
-	// 验证配置
+	// Verify configuration
 	for chain, limit := range configData.ChainLimits {
 		limit.hashrate, err = parseHashrate(limit.MaxHashrate)
 		if err != nil {

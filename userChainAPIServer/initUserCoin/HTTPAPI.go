@@ -12,14 +12,14 @@ import (
 	"github.com/golang/glog"
 )
 
-// HTTPRequestHandle HTTP请求处理函数
+// HTTPRequestHandle HTTP request handler
 type HTTPRequestHandle func(http.ResponseWriter, *http.Request)
 
 // 启动 API Server
 func runAPIServer() {
 	defer waitGroup.Done()
 
-	// HTTP监听
+	// HTTP listening
 	glog.Info("Listen HTTP ", configData.ListenAddr)
 
 	http.HandleFunc("/", getUserIDList)
@@ -32,7 +32,7 @@ func runAPIServer() {
 	}
 }
 
-// getUserIDList 获取子账户列表
+// getUserIDList Get a list of sub-accounts
 func getUserIDList(w http.ResponseWriter, req *http.Request) {
 	coin := req.FormValue("coin")
 	lastIDStr := req.FormValue("last_id")
@@ -44,7 +44,7 @@ func getUserIDList(w http.ResponseWriter, req *http.Request) {
 	w.Write([]byte(json))
 }
 
-// GetUserUpdateTime 获取用户的更新时间（即进入列表的时间）
+// GetUserUpdateTime Get the user's update time (i.e. when the list was entered)
 func GetUserUpdateTime(puname string, coin string) int64 {
 	punameC := C.CString(puname)
 	coinC := C.CString(coin)
@@ -53,7 +53,7 @@ func GetUserUpdateTime(puname string, coin string) int64 {
 	return int64(C.getUserUpdateTime(punameC, coinC))
 }
 
-// GetSafetyPeriod 获取用户更新的安全期（在安全期内，子账户可能尚未进入sserver的缓存）
+// GetSafetyPeriod Get the security period of the user update (during the security period, the sub-account may not have entered the sserver's cache)
 func GetSafetyPeriod() int64 {
 	return int64(configData.IntervalSeconds * 15 / 10)
 }

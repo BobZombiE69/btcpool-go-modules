@@ -12,7 +12,7 @@ import (
 	"github.com/golang/glog"
 )
 
-// RunUserAutoReg 运行自动注册任务
+// RunUserAutoReg Run the auto-registration task
 func RunUserAutoReg(config *ConfigData) {
 	defer waitGroup.Done()
 
@@ -86,8 +86,8 @@ func regUser(user string, config *ConfigData) {
 		", coin: ", config.UserAutoRegAPI.DefaultCoin,
 		", status: ", response.Status, ", message: ", response.Message)
 
-	// 注册成功，返回前等待10秒让sserver更新puid列表
-	// 返回时将通过删除zk节点来唤醒发起自动注册的switcher
+	// The registration is successful, wait for 10 seconds to let sserver update the puid list before returning
+	// When returning, it will wake up the switcher that initiated the automatic registration by deleting the zk node
 	time.Sleep(config.UserAutoRegAPI.IntervalSeconds * time.Second)
 
 	apiErr := setMiningCoin(user, config.UserAutoRegAPI.DefaultCoin)
@@ -96,7 +96,7 @@ func regUser(user string, config *ConfigData) {
 	}
 }
 
-// HTTPPost 调用HTTP Post方法
+// HTTPPost Call the HTTP Post method
 func HTTPPost(api AutoRegAPIConfig, data interface{}) (response []byte, err error) {
 
 	// encode request to buffer

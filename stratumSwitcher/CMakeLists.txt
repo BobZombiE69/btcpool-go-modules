@@ -1,4 +1,4 @@
-# 用于生成安装包
+# Used to generate installation packages
 
 cmake_minimum_required (VERSION 2.6)
 

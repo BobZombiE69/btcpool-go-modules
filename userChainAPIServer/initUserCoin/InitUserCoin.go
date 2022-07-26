@@ -17,30 +17,30 @@ import (
 // #include "UserListJSON.h"
 import "C"
 
-// UserIDMapResponse 用户id列表接口响应的数据结构
+// UserIDMapResponse The data structure of the user id list interface response
 type UserIDMapResponse struct {
 	ErrNo  int            `json:"err_no"`
 	ErrMsg string         `json:"err_msg"`
 	Data   map[string]int `json:"data"`
 }
 
-// UserIDMapEmptyResponse 用户id列表接口在用户数为0时候的响应
+// UserIDMapEmptyResponse The response of the user id list interface when the number of users is 0
 type UserIDMapEmptyResponse struct {
 	ErrNo  int           `json:"err_no"`
 	ErrMsg string        `json:"err_msg"`
 	Data   []interface{} `json:"data"`
 }
 
-// InitUserCoin 拉取用户id列表来初始化用户币种记录
+// InitUserCoin Pull the user id list to initialize the user currency record
 func InitUserCoin(coin string, url string) {
 	defer waitGroup.Done()
 
-	// 上次请求的最大puid
+	// max puid of last request
 	lastPUID := 0
 
 	for {
-		// 执行操作
-		// 定义在函数中，这样失败时可以简单的return并进入休眠
+		// perform action
+		// Defined in the function, so that when it fails, you can simply return and go to sleep
 		func() {
 			urlWithLastID := url + "?last_id=" + strconv.Itoa(lastPUID)
 
@@ -63,7 +63,7 @@ func InitUserCoin(coin string, url string) {
 			err = json.Unmarshal(body, userIDMapResponse)
 
 			if err != nil {
-				// 用户id接口在返回0个用户的时候data字段数据类型会由object变成array，需要用另一个struct解析
+				// When the user id interface returns 0 users, the data type of the data field will change from object to array, which needs to be parsed with another struct
 				userIDMapEmptyResponse := new(UserIDMapEmptyResponse)
 				err = json.Unmarshal(body, userIDMapEmptyResponse)
 
@@ -83,7 +83,7 @@ func InitUserCoin(coin string, url string) {
 
 			glog.Info("HTTP GET Success. User Num: ", len(userIDMapResponse.Data))
 
-			// 遍历用户币种列表
+			// Traverse the user currency list
 			for puname, puid := range userIDMapResponse.Data {
 				if strings.Contains(puname, "_") {
 					// remove coin postfix of puname
@@ -116,7 +116,7 @@ func InitUserCoin(coin string, url string) {
 			glog.Info("Finish: ", coin, "; User Num: ", len(userIDMapResponse.Data), "; ", url)
 		}()
 
-		// 休眠
+		// hibernate
 		time.Sleep(time.Duration(configData.IntervalSeconds) * time.Second)
 	}
 }
@@ -138,7 +138,7 @@ func setMiningCoin(puname string, coin string) (apiErr *APIError) {
 		return
 	}
 
-	// 检查币种是否存在
+	// Check if currency exists
 	exists := false
 
 	for availableCoin := range configData.UserListAPI {
@@ -154,13 +154,13 @@ func setMiningCoin(puname string, coin string) (apiErr *APIError) {
 	}
 
 	if configData.StratumServerCaseInsensitive {
-		// stratum server对子账户名大小写不敏感
-		// 简单的将子账户名转换为小写即可
+		// stratum server is not case sensitive to sub-account names
+		// Simply convert the sub-account name to lowercase
 		puname = strings.ToLower(puname)
 	} else if len(configData.ZKUserCaseInsensitiveIndex) > 0 {
-		// stratum server对子账户名大小写敏感
-		// 且 ZKUserCaseInsensitiveIndex 未被禁用（不为空）
-		// 写入大小写不敏感的用户名索引
+		// stratum server is case sensitive for sub-account names
+		// and ZKUserCaseInsensitiveIndex is not disabled (not empty)
+		// Write case-insensitive username index
 		zkIndexPath := configData.ZKUserCaseInsensitiveIndex + strings.ToLower(puname)
 		exists, _, err := zookeeperConn.Exists(zkIndexPath)
 		if err != nil {
@@ -174,10 +174,10 @@ func setMiningCoin(puname string, coin string) (apiErr *APIError) {
 		}
 	}
 
-	// stratumSwitcher 监控的键
+	// stratumSwitcher monitor key
 	zkPath := configData.ZKSwitcherWatchDir + puname
 
-	// 看看键是否存在
+	// see if the key exists
 	exists, _, err := zookeeperConn.Exists(zkPath)
 
 	if err != nil {
@@ -187,13 +187,13 @@ func setMiningCoin(puname string, coin string) (apiErr *APIError) {
 	}
 
 	if exists {
-		// 已经存在，跳过
+		// already exists, skip
 		apiErr = APIErrRecordExists
 		return
 
 	}
 
-	// 不存在，创建
+	// does not exist, create
 	_, err = zookeeperConn.Create(zkPath, []byte(coin), 0, zk.WorldACL(zk.PermAll))
 
 	if err != nil {

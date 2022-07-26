@@ -1,12 +1,12 @@
 # Merged Mining Proxy
 
-一个比特币联合挖矿代理，用于同时挖掘多个符合[比特币联合挖矿标准](https://en.bitcoin.it/wiki/Merged_mining_specification)的币种。
+A bitcoin merge-mining agent for simultaneously mining multiple coins that comply with the [Bitcoin Merged Mining Standard](https://en.bitcoin.it/wiki/Merged_mining_specification).
 
-可用于在同一个比特币矿池中同时挖掘域名币（Namecoin）、亦来云（Elastos）等。
+It can be used to mine Namecoin, Elastos, etc. at the same time in the same Bitcoin mining pool.
 
-### 构建 & 运行
+### build & run
 
-#### 安装golang
+#### install golang
 
 ```bash
 mkdir ~/source
@@ -17,7 +17,7 @@ tar zxf ~/source/go1.10.3.linux-amd64.tar.gz
 ln -s /usr/local/go/bin/go /usr/local/bin/go
 ```
 
-#### 构建
+#### Construct
 
 ```bash
 mkdir -p /work/golang
@@ -25,7 +25,7 @@ export GOPATH=/work/golang
 GIT_TERMINAL_PROMPT=1 go get github.com/btccom/btcpool-go-modules/mergedMiningProxy
 ```
 
-#### 编辑配置文件
+#### Edit configuration file
 
 ```bash
 mkdir /work/golang/mergedMiningProxy
@@ -34,16 +34,16 @@ cp /work/golang/src/github.com/btccom/btcpool-go-modules/mergedMiningProxy/confi
 vim /work/golang/mergedMiningProxy/config.json
 ```
 
-##### 配置文件详解：
+##### Configuration file details:
 
-备注：JSON文件不支持注释，如果您想拷贝以下配置文件，请先**删除所有注释**。
+Note: JSON files do not support comments. If you want to copy the following configuration files, please **delete all comments**first.
 ```js
 {
     "RPCServer": {
-        "ListenAddr": "0.0.0.0:8999", // 监听IP和端口
-        "User": "admin",  // Basic认证用户名
-        "Passwd": "admin", // Basic认证密码
-        "MainChain":"BTC",  // 指定联合挖矿的主链类型，如：bitcoin => "BTC", litecoin => "LTC"
+        "ListenAddr": "0.0.0.0:8999", // listen ip and port
+        "User": "admin",  // BasicAuthenticationUsername
+        "Passwd": "admin", // Basic authentication password
+        "MainChain":"BTC",  // Specify the main chain type of combined mining, such as：bitcoin => "BTC", litecoin => "LTC"
         "PoolDb": {
             "host" : "127.0.0.1",
             "port" : 3306,
@@ -53,33 +53,32 @@ vim /work/golang/mergedMiningProxy/config.json
         }
     },
     "AuxJobMaker": {
-        "CreateAuxBlockIntervalSeconds": 5, // 更新联合挖矿任务的频率（秒）
-        "AuxPowJobListSize": 1000, // 保留的联合挖矿任务数（假设客户端每隔5秒调用一次本程序的getauxblock接口，则1000个任务是5000秒）
-
-        // 可选，任务允许的最大Target（即最小难度）。如果任务Target大于该值（难度小于该值对应的难度），则用该值替换。
-        // 用于控制难度非常低的链的出块速度，如设为 "00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff" 以防爆块速度过快系统处理不过来。
-        // 注意：该值设置不合理会导致无法正常爆块。如果不需要该功能，请保持默认值或者删除该选项。
+        "CreateAuxBlockIntervalSeconds": 5, // Frequency of updating merged mining tasks (seconds)
+        "AuxPowJobListSize": 1000, // The number of reserved combined mining tasks (assuming that the client calls the getauxblock interface of this program every 5 seconds, 1000 tasks are 5000 seconds)
+//Optional, the maximum Target (ie minimum difficulty) allowed for the task. If the task Target is greater than this value (difficulty is less than the difficulty corresponding to this value), it is replaced with this value.
+        //It is used to control the block generation speed of the chain with very low difficulty. For example, if it is set to "00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffff", the system cannot handle the explosion-proof block speed too fast.
+        //Note: The unreasonable setting of this value will cause the block to be exploded normally. If this feature is not required, keep the default value or delete this option.
         "MaxJobTarget": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" 
     },
     "Chains": [
-        // 可添加任意数量的链
+        // Any number of chains can be added
         {
-            "Name": "Namecoin", // 链名，仅用于日志记录，内容可自定义
-            "AuxTableName" :"found_nmc_blocks",// 存储auxpow相关信息的表名
+            "Name": "Namecoin", // Chain name, only used for logging, the content can be customized
+            "AuxTableName" :"found_nmc_blocks",// Table name for storing auxpow related information
             "RPCServer": {
-                "URL": "http://127.0.0.1:8444/", // 联合挖矿RPC服务器
-                "User": "test", // Basic认证用户名
-                "Passwd": "123" // Basic认证密码
+                "URL": "http://127.0.0.1:8444/", // Merged Mining RPC Server
+                "User": "test", // BasicAuthenticationUsername
+                "Passwd": "123" // Basic authentication password
             },
-            // 定义创建联合挖矿任务的RPC
-            // 因为不同的区块链可能有不同的RPC（包括方法、参数和返回值），所以通过配置文件进行定义
+            // Define the RPC that creates the merged mining task
+            // Because different blockchains may have different RPCs (including methods, parameters, and return values), they are defined through configuration files
             "CreateAuxBlock": {
-                "Method": "getauxblock", // 方法名
-                "Params": [], // 参数，可以是任意类型（数组、对象、字符串等）
-                // 返回值键名映射
-                // RPC的返回值必须类似于下面的结构，其中键名可以与下面的例子不同。
-                // 不是所有键都是必须的，目前只有“hash”和“bits”是必须的（键名可以不同）。
-                // “chainid”在某些情况下是必须的（看后面的描述）。
+                "Method": "getauxblock", // method name
+                "Params": [], // Parameters, which can be of any type (array, object, string, etc.)
+                // Return value key name map
+                // The return value of the RPC must be similar to the following structure, where the key name can be different from the example below.
+                // Not all keys are required, currently only "hash" and "bits" are required (key names can be different).
+                // "chainid" is required in some cases (see description below).
                 /*
                     {
                         "result": {
@@ -95,33 +94,32 @@ vim /work/golang/mergedMiningProxy/config.json
                         "id": "curltest"
                     }
                 */
-                // 定义返回值中各个数据的键名
-                // 若返回值中没有某个可选数据，则直接把对应的 key-value 从下方 {} 中删去
-                // 若返回值中没有某个必须的数据，则该区块链节点与本程序的当前版本不兼容
+                // Define the key name of each data in the return value
+                // If there is no optional data in the returned value, delete the corresponding key-value directly from the {} below
+                // If there is no required data in the return value, the blockchain node is not compatible with the current version of the program
                 "ResponseKeys": {
-                    "Hash": "hash", // 联合挖矿的区块头哈希，必须。
-                    "ChainID": "chainid", // 链id，如果配置文件中没有定义链id的具体值，则该键名必须存在。
-                    "Bits": "bits", // 联合挖矿要求的难度，必须。采用[比特币区块头内nBits字段](https://bitcoin.org/en/developer-reference#target-nbits)的编码方法
-                    "Height": "height", // 区块高度，可选。目前仅用于日志记录。
-                    "PrevBlockHash": "previousblockhash", // 当前块的父区块哈希，可选。目前仅用于日志记录。
-                    "CoinbaseValue": "coinbasevalue" // 挖到这个区块可获得的奖励，可选。目前仅用于日志记录。
+                    "Hash": "hash", // The block header hash for merged mining, required.
+                    "ChainID": "chainid", // The chain id, if the specific value of the chain id is not defined in the configuration file, the key name must exist.
+                    "Bits": "bits", // The difficulty required for combined mining is required. Adopt the encoding method of [nBits field in the Bitcoin block header](https://bitcoin.org/en/developer-reference#target-nbits)
+                    "Height": "height", // Block height, optional. Currently only used for logging.
+                    "PrevBlockHash": "previousblockhash", //The parent block hash of the current block, optional. Currently only used for logging.
+                    "CoinbaseValue": "coinbasevalue" // The reward for mining this block, optional. Currently only used for logging.
                 }
             },
-            // 定义提交联合挖矿结果的RPC
+            // Define the RPC for submitting merged mining results
             "SubmitAuxBlock": {
                 "Method": "getauxblock", // 方法名
-                // 参数
-                // 支持两种类型的参数：
-                //     1. JSON-RPC 1.0 数组参数
-                //     1. JSON-RPC 2.0 命名参数（对象、Map、键值对）
-                // 某个参数的值若为字符串，则可以包含“变量”标记，这些标记在提交时会被替换为对应的值。
-                // 目前仅有两个可用的“变量”标记：
-                //    {hash-hex}       联合挖矿的区块头哈希（从 CreateAuxBlock 中获得，用来表示挖的是哪个区块）
-                //    {aux-pow-hex}    工作量证明数据的hex表示。该数据结构遵循比特币联合挖矿标准：https://en.bitcoin.it/wiki/Merged_mining_specification#Aux_proof-of-work_block
-                // 参数中可以包含除“变量”标记外的其他文本（常量），或者也可以包含非字符串类型的参数。数值、null、数组、对象等都是允许的。
-                // 但需要注意的是，只有最外层数组/对象中的字符串中的“变量”标记会被替换。
-                // 如果某区块链节点要求将区块头哈希或工作量证明放入深层数组或对象中，则其与本程序的当前版本不兼容。
-                "Params": [
+//parameters
+                //Two types of parameters are supported:
+                //1. JSON-RPC 1.0 array parameters
+                //1. JSON-RPC 2.0 named parameters (object, map, key-value pair)
+                //If the value of a parameter is a string, it can contain "variable" tags, which will be replaced with the corresponding value when submitting.
+                //There are currently only two "variable" tags available:
+                //{hash-hex} combined mining block header hash (obtained from CreateAuxBlock to indicate which block was mined)
+                //{aux-pow-hex} The hex representation of the proof-of-work data. This data structure follows the Bitcoin Merged Mining Standard: https://en.bitcoin.it/wiki/Merged_mining_specification#Aux_proof-of-work_block
+//Arguments can contain text (constants) other than "variable" tags, or arguments of non-string type. Numeric values, nulls, arrays, objects, etc. are all allowed.
+                //But note that only "variable" tokens in strings in the outermost array/object will be replaced.
+                //If a blockchain node requires a block header hash or proof-of-work to be placed into a deep array or object, it is not compatible with the current version of the program.                "Params": [
                     "{hash-hex}",
                     "{aux-pow-hex}"
                 ]
@@ -129,10 +127,10 @@ vim /work/golang/mergedMiningProxy/config.json
         },
         {
             "Name": "Namecoin ChainID 7",
-            // 可以在本程序中强制修改掉区块链的链id
-            // 该选项通常只用于调试，或者可用于兼容RPC返回值中不包含链id的区块链节点
-            // 若这里定义的链id与区块链实际要求的不同，则联合挖矿结果会被区块链节点拒绝
-            "ChainID": 7, // 重载的链id
+//The chain id of the blockchain can be forcibly modified in this program
+            //This option is usually only used for debugging, or can be used for blockchain nodes that are compatible with RPC return values ​​that do not contain chain id
+            //If the chain id defined here is different from the actual requirements of the blockchain, the result of the combined mining will be rejected by the blockchain node overloaded chain id
+            "ChainID": 7, // overloaded chain id
             "RPCServer":{
                 "URL": "http://127.0.0.1:9444/",
                 "User": "test",
@@ -141,7 +139,7 @@ vim /work/golang/mergedMiningProxy/config.json
             "CreateAuxBlock": {
                 "Method": "createauxblock",
                 "Params": [ "my2dxGb5jz43ktwGxg2doUaEb9WhZ9PQ7K" ],
-                // 这里不必（且不能）出现"ChainID"字段，否则上面重载的链id不会生效
+                // The "ChainID" field does not (and cannot) appear here, otherwise the overloaded chain id above will not take effect
                 "ResponseKeys": {
                     "Hash": "hash",
                     "Bits": "bits",
@@ -168,7 +166,7 @@ vim /work/golang/mergedMiningProxy/config.json
             },
             "CreateAuxBlock": {
                 "Method": "createauxblock",
-                // 这里使用了命名参数
+                // Named parameters are used here
                 "Params": {
                     "paytoaddress": "8VYXVxKKSAxkmRrfmGpQR2Kc66XhG6m3ta"
                 },
@@ -183,8 +181,8 @@ vim /work/golang/mergedMiningProxy/config.json
             },
             "SubmitAuxBlock": {
                 "Method": "submitauxblock",
-                // 命名参数
-                // 注意，只有第一层对象的value中的“变量”标记可以被替换
+//named parameters
+                //Note that only the "variable" tag in the value of the first level object can be replaced
                 "Params": {
                     "blockhash": "{hash-hex}",
                     "auxpow": "{aux-pow-hex}"
@@ -231,81 +229,79 @@ GIT_TERMINAL_PROMPT=1 go get -u github.com/btccom/btcpool-go-modules/mergedMinin
 diff /work/golang/src/github.com/btccom/btcpool-go-modules/mergedMiningProxy/config.default.json /work/golang/mergedMiningProxy/config.json
 ```
 
-### 调用该代理的RPC
+### Call the proxy's RPC
 
-支持 `getauxblock`, `createauxblock`, `submitauxblock` 等方法，方法的参数列表与域名币（Namecoin）一致。
+Support `getauxblock`, `createauxblock`, `submitauxblock` and other methods. The parameter list of the method is the same as that of Namecoin.
 
-如果不是上述方法，则该方法将被转发到配置文件中定义的第一个区块链节点处，并原样返回结果。
+If not the above method, the method will be forwarded to the first blockchain node defined in the configuration file and return the result as-is.
 
-一个特例是 `help` 方法，为了兼容 BTCPool `nmcauxmaker` 的域名币节点版本检查逻辑，help 方法会在原始返回值后附加对 `createauxblock` 和 `submitauxblock` 方法的描述。
+A special case is the `help` method. In order to be compatible with the BTCPool `nmcauxmaker`'s Namecoin node version checking logic, the help method appends a description of the `createauxblock` and `submitauxblock` methods to the original return value.
 
-如：
-
+like:
 ```bash
-# 获取任务
+# get task
 curl -v --user admin:admin --data-binary '{"id":null,"method":"getauxblock","params":[]}' -H 'content-type: application/json' http://localhost:8999/
 
-# 提交任务
+# Submit a task
 curl -v --user admin:admin --data-binary '{"id":1,"method":"getauxblock","params":["6c8adaefa07ab5ff14ddff1b8e2bae4ecfc59ef0a985064bd202565106ff054b","02000000010000000000000000000000000000000000000000000000000000000000000000ffffffff4b039ccd09041b96485b742f4254432e434f4d2ffabe6d6d6c8adaefa07ab5ff14ddff1b8e2bae4ecfc59ef0a985064bd202565106ff054b020000004204cb9a010388711000000000000000ffffffff0200000000000000001976a914c0174e89bd93eacd1d5a1af4ba1802d412afc08688ac0000000000000000266a24aa21a9ede2f61c3f71d1defd3fa999dfa36953755c690689799962b48bebd836974e8cf9000000002d6009ef30ae316bcebe42ea7f4feaf995fb34211aa80b9835e06b0388769ce6000000000000000000000000002075cc0a4e259833d348dd282c00a61ab112bea0e02d1ac85e4773d08a01b87b3f2dc921f1fd927d473649cbb7115debb95de77455401566d56b12a94cbfca8dff1b96485bffff7f201b96485b"]}' -H 'content-type: application/json' http://localhost:8999/
 
-# 获取任务（这里指定的钱包将被忽略，因为无法确定是哪个币种的）
+# Get the task (the wallet specified here will be ignored because it is impossible to determine which currency it is)
 curl -v --user admin:admin --data-binary '{"id":null,"method":"createauxblock","params":["my2dxGb5jz43ktwGxg2doUaEb9WhZ9PQ7K"]}' -H 'content-type: application/json' http://localhost:8999/
 
-# 提交任务
+# Submit a task
 curl -v --user admin:admin --data-binary '{"id":1,"method":"submitauxblock","params":["6c8adaefa07ab5ff14ddff1b8e2bae4ecfc59ef0a985064bd202565106ff054b","02000000010000000000000000000000000000000000000000000000000000000000000000ffffffff4b039ccd09041b96485b742f4254432e434f4d2ffabe6d6d6c8adaefa07ab5ff14ddff1b8e2bae4ecfc59ef0a985064bd202565106ff054b020000004204cb9a010388711000000000000000ffffffff0200000000000000001976a914c0174e89bd93eacd1d5a1af4ba1802d412afc08688ac0000000000000000266a24aa21a9ede2f61c3f71d1defd3fa999dfa36953755c690689799962b48bebd836974e8cf9000000002d6009ef30ae316bcebe42ea7f4feaf995fb34211aa80b9835e06b0388769ce6000000000000000000000000002075cc0a4e259833d348dd282c00a61ab112bea0e02d1ac85e4773d08a01b87b3f2dc921f1fd927d473649cbb7115debb95de77455401566d56b12a94cbfca8dff1b96485bffff7f201b96485b"]}' -H 'content-type: application/json' http://localhost:8999/
 ```
 
-#### 获取任务
+#### Get tasks
 
-返回的结果格式如下：
-
+The format of the returned result is as follows:
 ```js
 {
     "id": "1",
     "result": {
-        "hash": "9e077526b9e82040ec82492993d6e1d25c92ce572d03eb1caa6d3b868a558a32", // 联合挖矿区块hash（实际为多个区块hash的merkle root）
-        "chainid": 1, // 虚假的链id，始终为1
-        "previousblockhash": "949a1539fa4ac733d651f6709967d541374e3e23f4422ea6ac2bf925e385807a", // 第一个区块链的当前块的父区块哈希
-        "coinbasevalue": 5000000000, // 第一个区块链的当前块奖励
-        "bits": "207fffff", // 多个区块链中最小的难度对应的bits
-        "height": 123, // 第一个区块链的当前块高度
-        "_target": "0000000000000000000000000000000000000000000000000000000000ffff7f", // 上述bits对应的target
-        "merkle_size": 2, // 联合挖矿 merkle tree 的大小
-        "merkle_nonce": 2596996162 // 确定各个区块链在 merkle tree 上的位置用的随机值
+        "hash": "9e077526b9e82040ec82492993d6e1d25c92ce572d03eb1caa6d3b868a558a32", // Combined mining block hash (actually the merkle root of multiple block hashes)
+        "chainid": 1, // Fake chain id, always 1
+        "previousblockhash": "949a1539fa4ac733d651f6709967d541374e3e23f4422ea6ac2bf925e385807a", // The parent block hash of the current block of the first blockchain
+        "coinbasevalue": 5000000000, // The current block reward of the first blockchain
+        "bits": "207fffff", // The bits corresponding to the smallest difficulty in multiple blockchains
+        "height": 123, // The current block height of the first blockchain
+        "_target": "0000000000000000000000000000000000000000000000000000000000ffff7f", // The target corresponding to the above bits
+        "merkle_size": 2, // size of merged merkle tree
+        "merkle_nonce": 2596996162 // Random value used to determine the position of each blockchain on the merkle tree
     },
     "error": null
 }
 ```
 
-格式类似于域名币（Namecoin）的相同RPC的返回值，不过多了两个字段：`merkle_size` 和 `merkle_nonce`。
+The format is similar to the return value of the same RPC for Namecoin, but with two more fields: `merkle_size` and `merkle_nonce`.
 
-为了在主链（比特币）中正确嵌入多币种合并挖矿tag，矿池必须进行适配，识别这两个字段并放入[coinbase交易的联合挖矿tag中](https://en.bitcoin.it/wiki/Merged_mining_specification#Merged_mining_coinbase)。
+In order to correctly embed the multi-currency merged mining tag in the main chain (Bitcoin), the mining pool must adapt, identify these two fields and put them in the [coinbase transaction merged mining tag](https://en.bitcoin.it/wiki/Merged_mining_specification#Merged_mining_coinbase)。
 
 
-#### 提交任务
+#### Submit a task
 
-若提交的工作量满足至少一个区块链的难度，返回：
+If the submitted workload meets the difficulty of at least one blockchain, return:
 
 ```
 {"id":1,"result":true,"error":null}
 ````
 
-否则，返回
+Otherwise, return
 
 ```
 {"id":1,"result":null,"error":{"code":400,"message":"high-hash"}}
 ````
 
-如果发生其他错误，比如`block hash`未找到，或`aux pow`格式不正确等，则会返回对应的错误提示，格式类似上面的 `400 high-hash`。
-例如：
+If other errors occur, such as `block hash` is not found, or the format of `aux pow` is incorrect, etc., a corresponding error message will be returned, the format is similar to the above `400 high-hash`.
+E.g：
 
 ```
 {"id":1,"result":null,"error":{"code":400,"message":"cannot found blockHash d725af6c2243cdc8eb1180f72f820b8692f360ec1a2d87df0ba0c7c1c61f2c95 from AuxPowData 02000000010000000000000000000000000000000000000000000000000000000000000000ffffffff4b039ccd09041b96485b742f4254432e434f4d2ffabe6d6d6c8adaefa07ab5ff14ddff1b8e2bae4ecfc59ef0a985064bd202565106ff054b020000004204cb9a010388711000000000000000ffffffff0200000000000000001976a914c0174e89bd93eacd1d5a1af4ba1802d412afc08688ac0000000000000000266a24aa21a9ede2f61c3f71d1defd3fa999dfa36953755c690689799962b48bebd836974e8cf9000000002d6009ef30ae316bcebe42ea7f4feaf995fb34211aa80b9835e06b0388769ce6000000000000000000000000002075cc0a4e259833d348dd282c00a61ab112bea0e02d1ac85e4773d08a01b87b3f2dc921f1fd927d473649cbb7115debb95de77455401566d56b12a94cbfca8dff1b96485bffff7f301b96485b"}}
 ```
 
-注意，该RPC返回`true`不代表工作量真的被至少一个区块链接受。具体提交是否成功，还需要看本程序的日志。
+Note that the fact that this RPC returns `true` does not mean that the workload is actually accepted by at least one blockchain. Whether the submission is successful or not depends on the log of this program.
 
 
 ### TODO
 
-* 将各个区块链的爆块记录写入数据库。
+* Write the block records of each blockchain into the database.

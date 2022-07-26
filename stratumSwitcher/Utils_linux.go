@@ -86,7 +86,7 @@ func getListenerFd(listener net.Listener) (fd uintptr, err error) {
 }
 
 func newConnFromFd(fd uintptr) (conn net.Conn, err error) {
-	// 防止文件描述符泄露
+	// Prevent file descriptor leaks
 	err = setCloseOnExec(fd)
 	if err != nil {
 		return
@@ -98,7 +98,7 @@ func newConnFromFd(fd uintptr) (conn net.Conn, err error) {
 }
 
 func newListenerFromFd(fd uintptr) (listener net.Listener, err error) {
-	// 防止文件描述符泄露
+	// Prevent file descriptor leaks
 	err = setCloseOnExec(fd)
 	if err != nil {
 		return

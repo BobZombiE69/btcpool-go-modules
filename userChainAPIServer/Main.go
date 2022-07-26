@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	// 解析命令行参数
+	// Parse command line arguments
 	configFilePath := flag.String("config", "./config.json", "Path of config file")
 	flag.Parse()
 

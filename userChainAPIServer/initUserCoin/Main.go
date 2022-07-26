@@ -10,10 +10,10 @@ import (
 	"github.com/samuel/go-zookeeper/zk"
 )
 
-// Zookeeper连接超时时间
+// Zookeeper connection timeout
 const zookeeperConnTimeout = 5
 
-// AutoRegAPIConfig 用户自动注册API定义
+// AutoRegAPIConfig User auto-registration API definition
 type AutoRegAPIConfig struct {
 	IntervalSeconds time.Duration
 	URL             string
@@ -23,48 +23,48 @@ type AutoRegAPIConfig struct {
 	PostData        map[string]string
 }
 
-// ConfigData 配置数据
+// ConfigData Configuration Data
 type ConfigData struct {
-	// UserListAPI 币种对应的用户列表，形如{"btc":"url", "bcc":"url"}
+	// UserListAPI The list of users corresponding to the currency, in the form of {"btc":"url", "bcc":"url"}
 	UserListAPI map[string]string
-	// IntervalSeconds 每次拉取的间隔时间
+	// IntervalSeconds The time between each pull
 	IntervalSeconds uint
 
-	// Zookeeper集群的IP:端口列表
+	// Zookeeper cluster IP:port list
 	ZKBroker []string
-	// ZKSwitcherWatchDir Switcher监控的Zookeeper路径，以斜杠结尾
+	// ZKSwitcherWatchDir Zookeeper path monitored by Switcher, ending with a slash
 	ZKSwitcherWatchDir string
 
-	// EnableUserAutoReg 启用用户自动注册
+	// EnableUserAutoReg Enable user auto-registration
 	EnableUserAutoReg bool
-	// ZKAutoRegWatchDir 用户自动注册的zookeeper监控地址，以斜杠结尾
+	// ZKAutoRegWatchDir The zookeeper monitoring address automatically registered by the user, ending with a slash
 	ZKAutoRegWatchDir string
-	// UserAutoRegAPI 用户自动注册API
+	// UserAutoRegAPI User auto-registration API
 	UserAutoRegAPI AutoRegAPIConfig
-	// StratumServerCaseInsensitive 挖矿服务器对子账户名大小写不敏感，此时将总是写入小写的子账户名
+	// StratumServerCaseInsensitive The mining server is not case sensitive to the sub-account name, in this case, it will always write the sub-account name in lowercase
 	StratumServerCaseInsensitive bool
-	// ZKUserCaseInsensitiveIndex 大小写不敏感的子账户索引
-	//（可空，仅在 StratumServerCaseInsensitive == false 时用到）
+	// ZKUserCaseInsensitiveIndex Case-insensitive subaccount index
+	//（Nullable, only if StratumServerCaseInsensitive == false used)
 	ZKUserCaseInsensitiveIndex string
 
-	// 是否启用 API Server
+	// Whether to enable API Server
 	EnableAPIServer bool
-	// API Server 的监听IP:端口
+	// API Server The listening IP:port
 	ListenAddr string
 }
 
-// zookeeperConn Zookeeper连接对象
+// zookeeperConn Zookeeper connection object
 var zookeeperConn *zk.Conn
 
-// 配置数据
+// Configuration Data
 var configData *ConfigData
 
-// 用于等待goroutine结束
+// Used to wait for the goroutine to finish
 var waitGroup sync.WaitGroup
 
 // Main function
 func Main(configFilePath string) {
-	// 读取配置文件
+	// read configuration file
 	configJSON, err := ioutil.ReadFile(configFilePath)
 
 	if err != nil {
@@ -80,7 +80,7 @@ func Main(configFilePath string) {
 		return
 	}
 
-	// 若zookeeper路径不以“/”结尾，则添加
+	// If the zookeeper path does not end with "/", add
 	if configData.ZKSwitcherWatchDir[len(configData.ZKSwitcherWatchDir)-1] != '/' {
 		configData.ZKSwitcherWatchDir += "/"
 	}
@@ -93,7 +93,7 @@ func Main(configFilePath string) {
 		configData.ZKUserCaseInsensitiveIndex += "/"
 	}
 
-	// 建立到Zookeeper集群的连接
+	// Establish a connection to the Zookeeper cluster
 	conn, _, err := zk.Connect(configData.ZKBroker, time.Duration(zookeeperConnTimeout)*time.Second)
 
 	if err != nil {
@@ -103,7 +103,7 @@ func Main(configFilePath string) {
 
 	zookeeperConn = conn
 
-	// 检查并创建StratumSwitcher使用的Zookeeper路径
+	// Check and create Zookeeper paths used by StratumSwitcher
 	err = createZookeeperPath(configData.ZKSwitcherWatchDir)
 
 	if err != nil {
@@ -129,19 +129,19 @@ func Main(configFilePath string) {
 		}
 	}
 
-	// 开始执行币种初始化任务
+	// Start the currency initialization task
 	for coin, url := range configData.UserListAPI {
 		waitGroup.Add(1)
 		go InitUserCoin(coin, url)
 	}
 
-	// 启动自动注册
+	// Start automatic registration
 	if configData.EnableUserAutoReg {
 		waitGroup.Add(1)
 		go RunUserAutoReg(configData)
 	}
 
-	// 启动子账户列表API
+	// Start the Subaccount List API
 	if configData.EnableAPIServer {
 		waitGroup.Add(1)
 		go runAPIServer()

@@ -13,7 +13,7 @@ import (
 	"github.com/golang/glog"
 )
 
-// RPCResultCreateAuxBlock RPC方法createauxblock的返回结果
+// RPCResultCreateAuxBlock The return result of the RPC method createauxblock
 type RPCResultCreateAuxBlock struct {
 	Hash          string `json:"hash"`
 	ChainID       uint32 `json:"chainid"`
@@ -26,27 +26,27 @@ type RPCResultCreateAuxBlock struct {
 	MerkleNonce   uint32 `json:"merkle_nonce"`
 }
 
-// write 输出JSON-RPC格式的信息
+// write Output information in JSON-RPC format
 func write(w http.ResponseWriter, response interface{}) {
 	responseJSON, _ := json.Marshal(response)
 	w.Write(responseJSON)
 }
 
-// writeError 输出JSON-RPC格式的错误信息
+// writeError Output error messages in JSON-RPC format
 func writeError(w http.ResponseWriter, id interface{}, errNo int, errMsg string) {
 	err := RPCError{errNo, errMsg}
 	response := RPCResponse{id, nil, err}
 	write(w, response)
 }
 
-// ProxyRPCHandle 代理RPC处理器
+// ProxyRPCHandle Proxy RPC handler
 type ProxyRPCHandle struct {
 	config      ProxyRPCServer
 	auxJobMaker *AuxJobMaker
 	dbhandle    DBConnection
 }
 
-// NewProxyRPCHandle 创建代理RPC处理器
+// NewProxyRPCHandle Create a proxy RPC handler
 func NewProxyRPCHandle(config ProxyRPCServer, auxJobMaker *AuxJobMaker) (handle *ProxyRPCHandle) {
 	handle = new(ProxyRPCHandle)
 	handle.config = config
@@ -55,14 +55,14 @@ func NewProxyRPCHandle(config ProxyRPCServer, auxJobMaker *AuxJobMaker) (handle 
 	return
 }
 
-// basicAuth 执行Basic认证
+// basicAuth Perform Basic authentication
 func (handle *ProxyRPCHandle) basicAuth(r *http.Request) bool {
 	apiUser := []byte(handle.config.User)
 	apiPasswd := []byte(handle.config.Passwd)
 
 	user, passwd, ok := r.BasicAuth()
 
-	// 检查用户名密码是否正确
+	// Check if the username and password are correct
 	if ok && subtle.ConstantTimeCompare(apiUser, []byte(user)) == 1 && subtle.ConstantTimeCompare(apiPasswd, []byte(passwd)) == 1 {
 		return true
 	}
@@ -72,12 +72,12 @@ func (handle *ProxyRPCHandle) basicAuth(r *http.Request) bool {
 
 func (handle *ProxyRPCHandle) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if !handle.basicAuth(r) {
-		// 认证失败，提示 401 Unauthorized
-		// Restricted 可以改成其他的值
+		// Authentication failed with 401 Unauthorized
+		// Restricted can be changed to other values
 		w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
-		// 401 状态码
+		// 401 status code
 		w.WriteHeader(http.StatusUnauthorized)
-		// 401 页面
+		// 401 page
 		w.Write([]byte(`<h1>401 - Unauthorized</h1>`))
 		return
 	}
@@ -114,7 +114,7 @@ func (handle *ProxyRPCHandle) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 			handle.createAuxBlock(&response)
 		}
 	default:
-		// 将未知方法转发给第一个chain的server
+		// Forward the unknown method to the server of the first chain
 		responseJSON, err := RPCCall(handle.auxJobMaker.chains[0].RPCServer, request.Method, request.Params)
 		if err != nil {
 			writeError(w, nil, 400, err.Error())
@@ -125,7 +125,7 @@ func (handle *ProxyRPCHandle) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 			writeError(w, nil, 400, err.Error())
 			return
 		}
-		// 若调用的是help方法，则在结果后面追加对 createauxblock 和 submitauxblock 的描述
+		// If the help method is called, the description of createauxblock and submitauxblock is appended to the result
 		if request.Method == "help" && len(request.Params) == 0 {
 			helpStr, ok := response.Result.(string)
 			if ok {
@@ -224,10 +224,9 @@ func (handle *ProxyRPCHandle) submitAuxBlock(params []interface{}, response *RPC
 				auxPowData.ExpandingBlockchainBranch(extAuxPow.BlockchainBranch)
 				auxPowHex := auxPowData.ToHex()
 
-				// 切片是对原字符串的引用
-				// 对切片中字符串的修改会直接改变 chain.SubmitAuxBlock.Params 中的值
-				// 所以这里拷贝一份
-
+//slice is a reference to the original string
+//Modifications to the string in the slice will directly change the value in chain.SubmitAuxBlock.Params
+//So here is a copy
 				params := DeepCopy(chain.SubmitAuxBlock.Params)
 
 				if paramsArr, ok := params.([]interface{}); ok { // JSON-RPC 1.0 param array
@@ -305,7 +304,7 @@ func (handle *ProxyRPCHandle) submitAuxBlock(params []interface{}, response *RPC
 func runHTTPServer(config ProxyRPCServer, auxJobMaker *AuxJobMaker) {
 
 	handle := NewProxyRPCHandle(config, auxJobMaker)
-	// HTTP监听
+	// HTTP listening
 	glog.Info("Listen HTTP ", config.ListenAddr)
 	err := http.ListenAndServe(config.ListenAddr, handle)
 

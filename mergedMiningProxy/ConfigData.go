@@ -9,10 +9,10 @@ import (
 	"github.com/golang/glog"
 )
 
-// RPCResponseKeys RPC响应的key和本程序要求的key之间的映射
+// RPCResponseKeys The mapping between the key of the RPC response and the key requested by the program
 type RPCResponseKeys map[string]string
 
-// RPCCreateAuxBlockResultKeys 映射RPC方法createauxblock的返回结果的key
+// RPCCreateAuxBlockResultKeys The key to map the return result of the RPC method createauxblock
 type RPCCreateAuxBlockResultKeys struct {
 	Hash          string
 	ChainID       string
@@ -23,20 +23,20 @@ type RPCCreateAuxBlockResultKeys struct {
 	Target        string
 }
 
-// RPCCreateAuxBlockInfo RPC方法 createauxblock 的请求和响应信息
+// RPCCreateAuxBlockInfo Request and response information for the RPC method createauxblock
 type RPCCreateAuxBlockInfo struct {
 	Method       string
 	Params       interface{}
 	ResponseKeys RPCCreateAuxBlockResultKeys
 }
 
-// RPCSubmitAuxBlockInfo RPC方法 submitauxblock 的请求和响应信息
+// RPCSubmitAuxBlockInfo Request and response information for the RPC method submitauxblock
 type RPCSubmitAuxBlockInfo struct {
 	Method string
 	Params interface{}
 }
 
-// ChainRPCServer 合并挖矿的链的RPC服务器
+// ChainRPCServer RPC server for merge-mined chains
 type ChainRPCServer struct {
 	URL    string
 	User   string
@@ -52,7 +52,7 @@ type DBConnectionInfo struct {
 }
 
 
-// ChainRPCInfo 合并挖矿币种的RPC信息
+// ChainRPCInfo RPC information for merged mining coins
 type ChainRPCInfo struct {
 	ChainID        uint32
 	Name           string
@@ -66,7 +66,7 @@ type ChainRPCInfo struct {
 
 }
 
-// ProxyRPCServer 该代理的RPC服务器信息
+// ProxyRPCServer RPC server information for this proxy
 type ProxyRPCServer struct {
 	ListenAddr string
 	User       string
@@ -75,7 +75,7 @@ type ProxyRPCServer struct {
 	PoolDb     DBConnectionInfo
 }
 
-// AuxJobMakerInfo 辅助挖矿任务生成配置
+// AuxJobMakerInfo Auxiliary mining task generation configuration
 type AuxJobMakerInfo struct {
 	CreateAuxBlockIntervalSeconds uint
 	AuxPowJobListSize             uint
@@ -83,14 +83,14 @@ type AuxJobMakerInfo struct {
 	BlockHashPublishPort          string
 }
 
-// ConfigData 配置文件的数据结构
+// ConfigData Configuration file data structure
 type ConfigData struct {
 	RPCServer   ProxyRPCServer
 	AuxJobMaker AuxJobMakerInfo
 	Chains      []ChainRPCInfo
 }
 
-// Check 检查配置的合法性
+// Check Check the validity of the configuration
 func (conf *ConfigData) Check() (err error) {
 	if len(conf.RPCServer.User) < 1 {
 		return errors.New("RPCServer.User cannot be empty")
@@ -128,7 +128,7 @@ func (conf *ConfigData) Check() (err error) {
 		return errors.New("Chains cannot be empty")
 	}
 
-	// 检查每个Chain
+	// Check each Chain
 	for index, chain := range conf.Chains {
 		if len(chain.Name) < 1 {
 			return errors.New("Chains[" + strconv.Itoa(index) + "].Name cannot be empty")
@@ -167,7 +167,7 @@ func (conf *ConfigData) Check() (err error) {
 	return nil
 }
 
-// LoadFromFile 从文件载入配置
+// LoadFromFile Load configuration from file
 func (conf *ConfigData) LoadFromFile(file string) (err error) {
 
 	configJSON, err := ioutil.ReadFile(file)
@@ -185,7 +185,7 @@ func (conf *ConfigData) LoadFromFile(file string) (err error) {
 	return
 }
 
-// SaveToFile 保存配置到文件
+// SaveToFile save configuration to file
 func (conf *ConfigData) SaveToFile(file string) (err error) {
 
 	configJSON, err := json.Marshal(conf)

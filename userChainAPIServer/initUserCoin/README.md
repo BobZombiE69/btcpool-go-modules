@@ -1,16 +1,16 @@
 # Init User Coin
 
-通过拉取每个币种的子账户名/puid列表来增量的初始化zookeeper里的用户币种记录。
+Incremental initialization of user currency records in zookeeper by pulling the sub-account name/puid list of each currency.
 
-该程序是可选的，取决于矿池的用户系统架构。如果你的子账户列表根本不区分币种，就不需要部署该程序，直接使用`Switcher API Server`的定时任务初始化币种记录即可。
+This procedure is optional and depends on the user system architecture of the mining pool. If your sub-account list does not distinguish between currencies at all, you don't need to deploy this program, and you can directly use the scheduled task of `Switcher API Server` to initialize the currency record.
 
-### 子账户名/puid列表接口
+### Sub-account name/puid list interface
 
-本程序所要求的`子账户名/puid列表`与 BTCPool 里 [sserver](https://github.com/btccom/btcpool/blob/master/src/sserver/sserver.cfg) 要求的相同，具体说明如下：
+The `sub-account name/puid list` required by this program is the same as that required by [sserver](https://github.com/btccom/btcpool/blob/master/src/sserver/sserver.cfg) in BTCPool. as follows:
 
-#### 接口约定
+#### Interface conventions
 
-假设配置文件为
+Suppose the configuration file is
 ```json
 {
     "UserListAPI": {
@@ -22,13 +22,13 @@
 }
 ```
 
-则程序会启动两个`goroutine`（线程），同时访问 `btc` 和 `bcc` 的子账户名/puid列表接口。
+Then the program will start two `goroutine` (threads), and access the sub-account name/puid list interface of `btc` and `bcc` at the same time.
 
-以`btc`的子账户名/puid列表接口为例，首次访问的实际URL为：
+Taking the sub-account name/puid list interface of `btc` as an example, the actual URL of the first visit is:
 ```
 http://127.0.0.1:8000/btc-userlist.php?last_id=0
 ```
-接口返回完整的用户/puid列表，如：
+The interface returns a complete list of users/puids, such as:
 ```
 {
     "err_no": 0,
@@ -42,17 +42,17 @@ http://127.0.0.1:8000/btc-userlist.php?last_id=0
     }
 }
 ```
-程序将遍历该列表并将用户`aaa`、`bbb`、`vvv`、`ddd`的所挖币种设置为`btc`。该程序只负责初始化，不负责后续的币种切换，因此它简单的认为出现在`btc`列表中的用户所挖币种就是`btc`，出现在`bcc`列表中的用户所挖币种就是`bcc`。
+The program will traverse the list and set the mined currency of users `aaa`, `bbb`, `vvv`, `ddd` to `btc`. This program is only responsible for initialization, not for subsequent currency switching, so it simply thinks that the currency mined by the user appearing in the `btc` list is `btc`, and the currency mined by the user appearing in the `bcc` list It is `bcc`.
 
-此外，带有下划线的子账户名将被跳过，因此程序不会设置`mmm_btc`子账户的所挖币种。
+Also, subaccount names with underscores will be skipped, so the program will not set the mined currency of the `mmm_btc` subaccount.
 
-等待 `IntervalSeconds` 秒后，程序将再次访问如下URL：
+After waiting `IntervalSeconds` seconds, the program will visit the following URL again:
 ```
 http://127.0.0.1:8000/btc-userlist.php?last_id=6
 ```
-其中`6`为上次得到的最大puid。
+Where `6` is the largest puid obtained last time.
 
-如果没有`puid`大于`6`的用户被注册，接口返回空`data`对象：
+If no user with `puid` greater than `6` is registered, the interface returns an empty `data` object:
 ```json
 {
     "err_no": 0,
@@ -61,7 +61,7 @@ http://127.0.0.1:8000/btc-userlist.php?last_id=6
     }
 }
 ```
-否则，接口返回`puid`大于`6`的用户，如：
+Otherwise, the interface returns users whose `puid` is greater than `6`, such as:
 ```json
 {
     "err_no": 0,
@@ -71,33 +71,32 @@ http://127.0.0.1:8000/btc-userlist.php?last_id=6
     }
 }
 ```
-此后，用户`xxx`的所挖币种会被设置为`btc`，并且`last_id`变为`7`。
+After that, the mined currency of user `xxx` will be set to `btc`, and `last_id` will be changed to `7`.
 
-##### 备注
+##### Remark
 
-1. 重启该程序是安全的。虽然程序会重新开始遍历子账户列表，但是对于`zookeeper`中已经存在的子账户，该程序不会再写入记录。因此，该程序的重启不会影响用户后续的币种切换。
+1. It is safe to restart the program. Although the program will start traversing the list of subaccounts again, the program will not write records for subaccounts that already exist in `zookeeper`. Therefore, the restart of the program will not affect the user's subsequent currency switching.
 
-2. 该程序可以一直运行，这样它就可以增量的初始化刚注册的新用户的币种了。
+2. The program can run all the time, so that it can incrementally initialize the currency of the newly registered user.
 
-3. 同一个子账户在`btc`和`bcc`列表中同时出现的话，该程序将其初始化为`btc`或`bcc`取决于它先处理了哪边的记录。如果你的所有子账户都会在两边同时出现，并且puid也相同，或者你的子账户列表根本不区分币种，就不需要部署该程序，直接使用[Switcher API Server](../switcherAPIServer#定时任务)的定时任务初始化币种记录即可。
+3. If the same subaccount appears in both `btc` and `bcc` lists, the program initializes it to `btc` or `bcc` depending on which side of the record it processes first. If all your sub-accounts will appear on both sides at the same time, and the puid is the same, or your sub-account list does not distinguish currencies at all, you do not need to deploy this program, just use [Switcher API Server](../switcherAPIServer#Timer The timed task of the task) can initialize the currency record.
 
-##### 关于带有下划线的子账户名
+##### About sub-account names with underscores
 
-带有下划线的子账户名可以用于“用户其实在`btc`和`bcc`币种下各有一个子账户，但是想让用户感觉自己只有一个子账户”的情况。具体的做法是：
+Subaccount names with underscores can be used in cases where "the user actually has a subaccount under the `btc` and `bcc` currencies, but wants to make the user feel like they have only one subaccount". The specific approach is:
+1. Suppose the user already has a sub-account under the `btc` currency, which is `mmm`.
+2. The user operates the currency switching function and wants to switch to `bcc`. At this point, the system automatically creates a sub-account under the `bcc` currency for the user named `mmm_bcc`. The subaccount may have a different `puid` than the `mmm` subaccount.
+3. The system calls the [currency switch API](../switcherAPIServer#single user switch) at the same time to switch the currency of user `mmm` to `bcc`, such as `http://10.0.0.12:8082/switch? puname=mmm&coin=bcc`.
+4. At the same time, make sure that the currency of the user `mmm` returned by [UserCoinMapURL](../switcherAPIServer#interface convention) is also `bcc`. In addition, subaccount names with underscores should not appear in the returned result of `UserCoinMapURL` (because logically underlined and non-underlined subaccounts are the same subaccount).
+5. The user still uses the sub-account name `mmm` to connect to the mining pool. At this point, `stratumSwitcher` will forward the connection to `bcc`'s `sserver`. But there is no sub-account named `mmm` at `bcc`, so the miner authentication will fail. At this point, `stratumSwitcher` will automatically convert the sub-account name to `mmm_bcc` and try again, and it will succeed. The user's existing miners will also be switched to the `mmm_bcc` sub-account of the `bcc` currency.
 
-1. 假设用户在`btc`币种下已经有了一个子账户，为`mmm`。
-2. 用户操作币种切换功能，欲切换到`bcc`。此时，系统自动为用户在`bcc`币种下创建子账户，名为`mmm_bcc`。该子账户可能具有和`mmm`子账户不同的`puid`。
-3. 系统同时调用[币种切换API](../switcherAPIServer#单用户切换)，将用户`mmm`的币种切换为`bcc`，如`http://10.0.0.12:8082/switch?puname=mmm&coin=bcc`。
-4. 与此同时，要保证[UserCoinMapURL](../switcherAPIServer#接口约定) 返回的用户`mmm`的币种也为`bcc`。此外，`UserCoinMapURL`的返回结果中不应该出现带有下划线的子账户名（因为从逻辑上来说带有下划线和不带下划线的子账户为同一个子账户）。
-5. 用户依然使用子账户名`mmm`连接矿池。此时，`stratumSwitcher`将会把连接转发到`bcc`的`sserver`。但是`bcc`处没有名为`mmm`的子账户，所以矿机认证会失败。此时，`stratumSwitcher`会自动将子账户名转换为`mmm_bcc`重试，此时便会成功。用户已有的矿机也会这样被切换到`bcc`币种的`mmm_bcc`子账户。
+#### reference implementation
 
-#### 参考实现
+Here is an example implementing `UserListAPI`：https://github.com/btccom/btcpool/issues/16#issuecomment-278245381
 
-这里有一个实现`UserListAPI`的例子：https://github.com/btccom/btcpool/issues/16#issuecomment-278245381
+### build & run
 
-### 构建 & 运行
-
-安装golang
+install golang
 
 ```bash
 mkdir ~/source
@@ -108,7 +107,7 @@ tar zxf ~/source/go1.10.3.linux-amd64.tar.gz
 ln -s /usr/local/go/bin/go /usr/local/bin/go
 ```
 
-构建
+Construct
 
 ```bash
 mkdir -p /work/golang
@@ -116,7 +115,7 @@ export GOPATH=/work/golang
 GIT_TERMINAL_PROMPT=1 go get github.com/btccom/btcpool-go-modules/initUserCoin
 ```
 
-编辑配置文件
+Edit configuration file
 
 ```bash
 mkdir /work/golang/initUserCoin
@@ -125,7 +124,7 @@ cp /work/golang/src/github.com/btccom/btcpool-go-modules/initUserCoin/config.def
 vim /work/golang/initUserCoin/config.json
 ```
 
-创建supervisor条目
+Create supervisor entry
 
 ```bash
 vim /etc/supervisor/conf.d/switcher-inituser.conf
@@ -145,7 +144,7 @@ stdout_logfile_backups=5
 stdout_logfile=/work/golang/initUserCoin/log/stdout.log
 ```
 
-运行
+run
 
 ```bash
 supervisorctl reread
@@ -153,7 +152,7 @@ supervisorctl update
 supervisorctl status
 ```
 
-#### 更新
+#### renew
 
 ```bash
 export GOPATH=/work/golang

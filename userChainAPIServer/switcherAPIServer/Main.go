@@ -10,54 +10,54 @@ import (
 	"github.com/samuel/go-zookeeper/zk"
 )
 
-// Zookeeper连接超时时间
+// Zookeeper connection timeout
 const zookeeperConnTimeout = 5
 
-// ConfigData 配置数据
+// ConfigData Configuration Data
 type ConfigData struct {
-	// 是否启用 API Server
+	// Whether to enable API Server
 	EnableAPIServer bool
-	// API 用户名
+	// API username
 	APIUser string
-	// API 密码
+	// API password
 	APIPassword string
-	// API Server 的监听IP:端口
+	// API Server The listening IP:port
 	ListenAddr string
 
-	// AvailableCoins 可用币种，形如 {"btc", "bcc", ...}
+	// AvailableCoins Available currencies, like {"btc", "bcc", ...}
 	AvailableCoins []string
 
-	// Zookeeper集群的IP:端口列表
+	// Zookeeper cluster IP:port list
 	ZKBroker []string
-	// ZKSwitcherWatchDir Switcher监控的Zookeeper路径，以斜杠结尾
+	// ZKSwitcherWatchDir Zookeeper path monitored by Switcher, ending with a slash
 	ZKSwitcherWatchDir string
 
-	// 是否启用定时检测任务
+	// Whether to enable scheduled detection tasks
 	EnableCronJob bool
-	// 定时检测间隔时间
+	// Timing detection interval time
 	CronIntervalSeconds int
-	// 用户:币种对应表的URL
+	// User: URL of currency correspondence table
 	UserCoinMapURL string
-	// 挖矿服务器对子账户名大小写不敏感，此时将总是写入小写的子账户名
+	// The mining server is not case sensitive to the sub-account name, in this case, it will always write the sub-account name in lowercase
 	StratumServerCaseInsensitive bool
-	//子池更新用的zookeeper根目录（注意，不应包括币种和子池名称），以斜杠结尾
+	//The zookeeper root directory for sub-pool updates (note that the currency and sub-pool name should not be included), ending with a slash
 	ZKSubPoolUpdateBaseDir string
-	// 子池更新时jobmaker的应答超时时间，如果在该时间内jobmaker没有应答，则API返回错误
+	// The response timeout time of the jobmaker when the subpool is updated. If the jobmaker does not respond within this time, the API returns an error
 	ZKSubPoolUpdateAckTimeout int
 }
 
-// zookeeperConn Zookeeper连接对象
+// zookeeperConn Zookeeper connection object
 var zookeeperConn *zk.Conn
 
-// 配置数据
+// Configuration Data
 var configData *ConfigData
 
-// 用于等待goroutine结束
+// Used to wait for the goroutine to finish
 var waitGroup sync.WaitGroup
 
 // Main function
 func Main(configFilePath string) {
-	// 读取配置文件
+	// read configuration file
 	configJSON, err := ioutil.ReadFile(configFilePath)
 
 	if err != nil {
@@ -73,7 +73,7 @@ func Main(configFilePath string) {
 		return
 	}
 
-	// 若zookeeper路径不以“/”结尾，则添加
+	// If the zookeeper path does not end with "/", add
 	if configData.ZKSwitcherWatchDir[len(configData.ZKSwitcherWatchDir)-1] != '/' {
 		configData.ZKSwitcherWatchDir += "/"
 	}
@@ -81,7 +81,7 @@ func Main(configFilePath string) {
 		configData.ZKSubPoolUpdateBaseDir += "/"
 	}
 
-	// 建立到Zookeeper集群的连接
+	// Establish a connection to the Zookeeper cluster
 	conn, _, err := zk.Connect(configData.ZKBroker, time.Duration(zookeeperConnTimeout)*time.Second)
 
 	if err != nil {
@@ -91,7 +91,7 @@ func Main(configFilePath string) {
 
 	zookeeperConn = conn
 
-	// 检查并创建StratumSwitcher使用的Zookeeper路径
+	// Check and create Zookeeper paths used by StratumSwitcher
 	err = createZookeeperPath(configData.ZKSwitcherWatchDir)
 
 	if err != nil {

@@ -15,7 +15,7 @@ import (
 	zmq "github.com/pebbe/zmq4"
 )
 
-// AuxPowInfo 辅助工作量证明的信息
+// AuxPowInfo Information to Support Proof of Work
 // @see <https://en.bitcoin.it/wiki/Merged_mining_specification#Aux_proof-of-work_block>
 type AuxPowInfo struct {
 	Height           uint32
@@ -24,7 +24,7 @@ type AuxPowInfo struct {
 	BlockchainBranch merkle.MerklePath
 }
 
-// AuxPowJob 合并挖矿的任务
+// AuxPowJob Merge mining tasks
 type AuxPowJob struct {
 	MinBits   string
 	MaxTarget hash.Byte32
@@ -41,7 +41,7 @@ type AuxPowJob struct {
 	Height        uint32
 }
 
-// AuxJobMaker 辅助挖矿任务生成器
+// AuxJobMaker Auxiliary Mining Task Generator
 type AuxJobMaker struct {
 	chains           []ChainRPCInfo
 	currentAuxBlocks map[int]AuxBlockInfo
@@ -59,7 +59,7 @@ type AuxJobMaker struct {
 	blockHashChnel     chan string
 }
 
-// NewAuxJobMaker 创建辅助挖矿任务构造器
+// NewAuxJobMaker Create Auxiliary Mining Task Constructor
 func NewAuxJobMaker(config AuxJobMakerInfo, chains []ChainRPCInfo) (maker *AuxJobMaker) {
 	maker = new(AuxJobMaker)
 	maker.chains = chains
@@ -81,12 +81,12 @@ func NewAuxJobMaker(config AuxJobMakerInfo, chains []ChainRPCInfo) (maker *AuxJo
 	return
 }
 
-// Run 运行辅助挖矿任务构造器
+// Run Run the auxiliary mining task constructor
 func (maker *AuxJobMaker) Run() {
 	maker.updateAuxBlockAllChains()
 }
 
-// GetAuxJob 获取辅助挖矿任务
+// GetAuxJob Get auxiliary mining tasks
 func (maker *AuxJobMaker) GetAuxJob() (job AuxPowJob, err error) {
 	job, err = maker.makeAuxJob()
 	if err != nil {
@@ -116,7 +116,7 @@ func (maker *AuxJobMaker) GetAuxJob() (job AuxPowJob, err error) {
 	return
 }
 
-// FindAuxJob 查找辅助挖矿任务
+// FindAuxJob Find Auxiliary Mining Tasks
 func (maker *AuxJobMaker) FindAuxJob(merkleRoot hash.Byte32) (job AuxPowJob, err error) {
 	job, ok := maker.auxPowJobs[merkleRoot]
 	if !ok {
@@ -125,7 +125,7 @@ func (maker *AuxJobMaker) FindAuxJob(merkleRoot hash.Byte32) (job AuxPowJob, err
 	return
 }
 
-// updateAuxBlock 更新辅助区块
+// updateAuxBlock Update auxiliary blocks
 func (maker *AuxJobMaker) updateAuxBlock(index int) {
 	chain := maker.chains[index]
 	auxBlockInfo, err := RPCCallCreateAuxBlock(chain)
@@ -135,7 +135,7 @@ func (maker *AuxJobMaker) updateAuxBlock(index int) {
 	}
 
 	maker.lock.Lock()
-	// 检查chainID是否更新，如已更新(或oldAuxBlock不存在)，则重置chainIDIndex
+	// Check if the chainID is updated, if it has been updated (or oldAuxBlock does not exist), reset the chainIDIndex
 	oldAuxBlock, ok := maker.currentAuxBlocks[index]
 	if !ok || oldAuxBlock.ChainID != auxBlockInfo.ChainID {
 		maker.chainIDIndexSlots = nil
@@ -159,7 +159,7 @@ func (maker *AuxJobMaker) updateAuxBlock(index int) {
 	}
 }
 
-// updateAuxBlockAllChains 持续更新所有链的辅助区块
+// updateAuxBlockAllChains Continuously update auxiliary blocks for all chains
 func (maker *AuxJobMaker) updateAuxBlockAllChains() {
 
    	go func () {
@@ -284,7 +284,7 @@ func (maker *AuxJobMaker) updateAuxBlockAllChains() {
 	}
 }
 
-// makeAuxJob 构造辅助挖矿任务
+// makeAuxJob Construct auxiliary mining tasks
 func (maker *AuxJobMaker) makeAuxJob() (job AuxPowJob, err error) {
 	maker.lock.Lock()
 	defer maker.lock.Unlock()

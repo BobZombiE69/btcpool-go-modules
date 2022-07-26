@@ -11,16 +11,16 @@ import (
 	"strings"
 )
 
-// IP2Long IP转整数
-// 来自 <https://www.socketloop.com/tutorials/golang-convert-ip-address-string-to-long-unsigned-32-bit-integer>
+// IP2Long IP to integer
+// from <https://www.socketloop.com/tutorials/golang-convert-ip-address-string-to-long-unsigned-32-bit-integer>
 func IP2Long(ip string) uint32 {
 	var long uint32
 	binary.Read(bytes.NewBuffer(net.ParseIP(ip).To4()), binary.BigEndian, &long)
 	return long
 }
 
-// Long2IP 整数转IP
-// 来自 <https://www.socketloop.com/tutorials/golang-convert-ip-address-string-to-long-unsigned-32-bit-integer>
+// Long2IP Integer to IP
+// from <https://www.socketloop.com/tutorials/golang-convert-ip-address-string-to-long-unsigned-32-bit-integer>
 func Long2IP(ipLong uint32) string {
 	ipInt := int64(ipLong)
 
@@ -39,14 +39,14 @@ func Uint32ToHex(num uint32) string {
 	return hex.EncodeToString(bytesBuffer.Bytes())
 }
 
-// Uint32ToHexLE unit32 转 hex (小端字节序)
+// Uint32ToHexLE unit32 change hex (little endian byte order)
 func Uint32ToHexLE(num uint32) string {
 	bytesBuffer := bytes.NewBuffer([]byte{})
 	binary.Write(bytesBuffer, binary.LittleEndian, num)
 	return hex.EncodeToString(bytesBuffer.Bytes())
 }
 
-// SubString 字符串截取
+// SubString String interception
 // <http://outofmemory.cn/code-snippet/1365/Go-language-jiequ-string-function>
 func SubString(str string, start, length int) string {
 	rs := []rune(str)
@@ -78,7 +78,7 @@ func SubString(str string, start, length int) string {
 	return string(rs[start:end])
 }
 
-// IOCopyBuffer 在写入失败时还能拿到Buffer的IO拷贝函数
+// IOCopyBuffer When the write fails, you can also get the IO copy function of the Buffer
 func IOCopyBuffer(dst io.Writer, src io.Reader, buf []byte) (bufferLen int, err error) {
 	if buf == nil {
 		err = ErrInvalidBuffer
@@ -114,7 +114,7 @@ func IOCopyBuffer(dst io.Writer, src io.Reader, buf []byte) (bufferLen int, err 
 	return
 }
 
-// StripEthAddrFromFullName 从矿机名中去除不必要的以太坊钱包地址
+// StripEthAddrFromFullName Remove unnecessary Ethereum wallet addresses from miner names
 func StripEthAddrFromFullName(fullNameStr string) string {
 	pos := strings.Index(fullNameStr, ".")
 
@@ -127,7 +127,7 @@ func StripEthAddrFromFullName(fullNameStr string) string {
 	return fullNameStr
 }
 
-// FilterWorkerName 过滤矿工名
+// FilterWorkerName filter miner name
 func FilterWorkerName(workerName string) string {
 	pattren := regexp.MustCompile("[^a-zA-Z0-9._:|^/-]")
 	return pattren.ReplaceAllString(workerName, "")

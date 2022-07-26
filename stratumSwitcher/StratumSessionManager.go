@@ -14,57 +14,57 @@ import (
 	"github.com/willf/bitset"
 )
 
-// StratumServerInfo Stratum服务器的信息
+// StratumServerInfo Information on Stratum Servers
 type StratumServerInfo struct {
 	URL        string
 	UserSuffix string
 }
 
-// StratumServerInfoMap Stratum服务器的信息散列表
+// StratumServerInfoMap Hash table of information for Stratum servers
 type StratumServerInfoMap map[string]StratumServerInfo
 
-// StratumSessionMap Stratum会话散列表
+// StratumSessionMap Stratum session hash table
 type StratumSessionMap map[uint32]*StratumSession
 
-// StratumSessionManager Stratum会话管理器
+// StratumSessionManager Stratum Session Manager
 type StratumSessionManager struct {
-	// 修改StratumSessionMap时加的锁
+	// The lock added when modifying StratumSessionMap
 	lock sync.Mutex
-	// 所有处于正常代理状态的会话
+	// All sessions in normal proxy state
 	sessions StratumSessionMap
-	// 会话ID管理器
+	// Session ID Manager
 	sessionIDManager *SessionIDManager
-	// Stratum服务器列表
+	// Stratum Server List
 	stratumServerInfoMap StratumServerInfoMap
-	// Zookeeper管理器
+	// Zookeeper Manager
 	zookeeperManager *ZookeeperManager
-	// zookeeperSwitcherWatchDir 切换服务监控的zookeeper目录路径
-	// 具体监控的路径为 zookeeperSwitcherWatchDir/子账户名
+	// zookeeperSwitcherWatchDir The zookeeper directory path monitored by the switch service
+	// The specific monitoring path is zookeeperSwitcherWatchDir/sub account name
 	zookeeperSwitcherWatchDir string
-	// enableUserAutoReg 是否打开子账户自动注册功能
+	// enableUserAutoReg Whether to open the sub-account automatic registration function
 	enableUserAutoReg bool
-	// zookeeperAutoRegWatchDir 自动注册服务监控的zookeeper目录路径
-	// 具体监控的路径为 zookeeperAutoRegWatchDir/子账户名
+	// zookeeperAutoRegWatchDir Zookeeper directory path for automatic registration service monitoring
+	// The specific monitoring path is zookeeperAutoRegWatchDir/sub account name
 	zookeeperAutoRegWatchDir string
-	// 当前允许的自动注册用户数（注册一个减1，完成后加回来，到0拒绝自动注册，以防DDoS）
+	// The number of auto-registered users currently allowed (1 minus 1 for registration, add back after completion, and 0 to reject auto-registration to prevent DDoS)
 	autoRegAllowUsers int64
-	// stratum server对子账户名大小写不敏感
+	// stratum The server is not case sensitive to the sub-account name
 	stratumServerCaseInsensitive bool
-	// 大小写不敏感的用户名索引（可空，仅在 stratumServerCaseInsensitive == false 时用到）
+	// Case-insensitive username index (nullable, only used when stratumServerCaseInsensitive == false)
 	zkUserCaseInsensitiveIndex string
-	// 监听的IP和TCP端口
+	// Listening IP and TCP port
 	tcpListenAddr string
-	// TCP监听对象
+	// TCP listener object
 	tcpListener net.Listener
-	// 无停机升级对象
+	// Upgrading objects without downtime
 	upgradable *Upgradable
-	// 区块链类型
+	// blockchain type
 	chainType ChainType
-	// 用于在错误信息中展示的serverID
+	// serverID to display in error messages
 	serverID uint8
 }
 
-// NewStratumSessionManager 创建Stratum会话管理器
+// NewStratumSessionManager Create Stratum Session Manager
 func NewStratumSessionManager(conf ConfigData, runtimeData RuntimeData) (manager *StratumSessionManager, err error) {
 	var chainType ChainType
 	var indexBits uint8
@@ -107,7 +107,7 @@ func NewStratumSessionManager(conf ConfigData, runtimeData RuntimeData) (manager
 	}
 
 	if manager.serverID == 0 {
-		// 尝试从zookeeper分配ID
+		// try to assign id from zookeeper
 		manager.serverID, err = manager.AssignServerIDFromZK(conf.ZKServerIDAssignDir, runtimeData.ServerID)
 		if err != nil {
 			err = errors.New("Cannot assign server id from zk: " + err.Error())
@@ -121,15 +121,15 @@ func NewStratumSessionManager(conf ConfigData, runtimeData RuntimeData) (manager
 	}
 
 	if manager.chainType == ChainTypeEthereum {
-		// 由于SessionID是预分配的，为了与要求extraNonce不超过2字节的NiceHash以太坊客户端取得兼容，
-		// 默认采用较大的ID分配间隔，以减少挖矿空间重叠的影响。
+		// By default, a larger ID allocation interval is adopted to reduce the impact of overlapping mining space.
+		//Since the SessionID is pre-allocated, for compatibility with the NiceHash Ethereum client that requires an extraNonce of no more than 2 bytes,
 		manager.sessionIDManager.setAllocInterval(256)
 	}
 
 	return
 }
 
-// AssignServerIDFromZK 从Zookeeper分配服务器ID
+// AssignServerIDFromZK Assign server ID from Zookeeper
 func (manager *StratumSessionManager) AssignServerIDFromZK(assignDir string, oldServerID uint8) (serverID uint8, err error) {
 	manager.zookeeperManager.createZookeeperPath(assignDir)
 
@@ -141,8 +141,8 @@ func (manager *StratumSessionManager) AssignServerIDFromZK(assignDir string, old
 	}
 
 	childrenSet := bitset.New(256)
-	childrenSet.Set(0) // id 0 不可分配
-	// 将已分配的id记录到bitset中
+	childrenSet.Set(0) // id 0 not assignable
+	// Record the assigned id into the bitset
 	for _, idStr := range children {
 		idInt, convErr := strconv.Atoi(idStr)
 		if convErr != nil {
@@ -156,7 +156,7 @@ func (manager *StratumSessionManager) AssignServerIDFromZK(assignDir string, old
 		childrenSet.Set(uint(idInt))
 	}
 
-	// 构造写入分配节点的元信息
+	// Construct the meta information written to the allocation node
 	type SwitcherMetaData struct {
 		ChainType  string
 		Coins      []string
@@ -179,7 +179,7 @@ func (manager *StratumSessionManager) AssignServerIDFromZK(assignDir string, old
 
 	dataJSON, _ := json.Marshal(data)
 
-	// 寻找并尝试可分配的id
+	// Find and try assignable id
 	idIndex := uint(oldServerID)
 	for {
 		newID, success := childrenSet.NextClear(idIndex)
@@ -201,7 +201,7 @@ func (manager *StratumSessionManager) AssignServerIDFromZK(assignDir string, old
 	}
 }
 
-// RunStratumSession 运行一个Stratum会话
+// RunStratumSession Run a Stratum session
 func (manager *StratumSessionManager) RunStratumSession(conn net.Conn) {
 	// 产生 sessionID （Extranonce1）
 	sessionID, err := manager.sessionIDManager.AllocSessionID()
@@ -216,7 +216,7 @@ func (manager *StratumSessionManager) RunStratumSession(conn net.Conn) {
 	session.Run()
 }
 
-// ResumeStratumSession 恢复一个Stratum会话
+// ResumeStratumSession Resume a Stratum session
 func (manager *StratumSessionManager) ResumeStratumSession(sessionData StratumSessionData) {
 	clientConn, clientErr := newConnFromFd(sessionData.ClientConnFD)
 	serverConn, serverErr := newConnFromFd(sessionData.ServerConnFD)
@@ -241,7 +241,7 @@ func (manager *StratumSessionManager) ResumeStratumSession(sessionData StratumSe
 		return
 	}
 
-	//恢复sessionID
+	//restore sessionID
 	err := manager.sessionIDManager.ResumeSessionID(sessionData.SessionID)
 	if err != nil {
 		glog.Error("Resume server conn failed: ", err)
@@ -251,49 +251,49 @@ func (manager *StratumSessionManager) ResumeStratumSession(sessionData StratumSe
 	session.Resume(sessionData, serverConn)
 }
 
-// RegisterStratumSession 注册Stratum会话（在Stratum会话开始正常代理之后调用）
+// RegisterStratumSession Register Stratum session (called after Stratum session starts normal proxy)
 func (manager *StratumSessionManager) RegisterStratumSession(session *StratumSession) {
 	manager.lock.Lock()
 	manager.sessions[session.sessionID] = session
 	manager.lock.Unlock()
 }
 
-// UnRegisterStratumSession 解除Stratum会话注册（在Stratum会话重连时调用）
+// UnRegisterStratumSession Unregister Stratum session (called when Stratum session is reconnected)
 func (manager *StratumSessionManager) UnRegisterStratumSession(session *StratumSession) {
 	manager.lock.Lock()
-	// 删除已注册的会话
+	// delete a registered session
 	delete(manager.sessions, session.sessionID)
 	manager.lock.Unlock()
 
-	// 从Zookeeper管理器中删除币种监控
+	// Remove currency monitoring from Zookeeper manager
 	manager.zookeeperManager.ReleaseW(session.zkWatchPath, session.sessionID)
 }
 
-// ReleaseStratumSession 释放Stratum会话（在Stratum会话停止时调用）
+// ReleaseStratumSession Release Stratum session (called when Stratum session is stopped)
 func (manager *StratumSessionManager) ReleaseStratumSession(session *StratumSession) {
 	manager.lock.Lock()
-	// 删除已注册的会话
+	// delete a registered session
 	delete(manager.sessions, session.sessionID)
 	manager.lock.Unlock()
 
-	// 释放会话ID
+	// release session id
 	manager.sessionIDManager.FreeSessionID(session.sessionID)
-	// 从Zookeeper管理器中删除币种监控
+	// Remove currency monitoring from Zookeeper manager
 	manager.zookeeperManager.ReleaseW(session.zkWatchPath, session.sessionID)
 }
 
-// Run 开始运行StratumSwitcher服务
+// Run Start running the StratumSwitcher service
 func (manager *StratumSessionManager) Run(runtimeData RuntimeData) {
 	var err error
 
 	if runtimeData.Action == "upgrade" {
-		// 恢复 TCP 会话
+		// Resume TCP session
 		for _, sessionData := range runtimeData.SessionDatas {
 			manager.ResumeStratumSession(sessionData)
 		}
 	}
 
-	// TCP监听
+	// TCP listening
 	glog.Info("Listen TCP ", manager.tcpListenAddr)
 	manager.tcpListener, err = net.Listen("tcp", manager.tcpListenAddr)
 
@@ -315,7 +315,7 @@ func (manager *StratumSessionManager) Run(runtimeData RuntimeData) {
 	}
 }
 
-// Upgradable 使StratumSwitcher可无停机升级
+// Upgradable Enables StratumSwitcher upgrades without downtime
 func (manager *StratumSessionManager) Upgradable() {
 	manager.upgradable = NewUpgradable(manager)
 
@@ -329,15 +329,15 @@ func (manager *StratumSessionManager) Upgradable() {
 	glog.Info("Stratum Switcher is Now Upgradable.")
 }
 
-// GetRegularSubaccountName 获取规范化的(大小写敏感的)子账户名
+// GetRegularSubaccountName get normalized(大小写敏感的)子账户名
 func (manager *StratumSessionManager) GetRegularSubaccountName(subAccountName string) string {
 	if manager.stratumServerCaseInsensitive {
-		// sserver对子账户名的大小写不敏感，直接返回小写后的子账户名
+		// The server is insensitive to the case of the sub-account name, and directly returns the lower-case sub-account name
 		return strings.ToLower(subAccountName)
 	}
 
 	if len(manager.zkUserCaseInsensitiveIndex) <= 0 {
-		// zkUserCaseInsensitiveIndex 被禁用（为空），直接返回子账户名本身
+		// zkUserCaseInsensitiveIndex Disabled (empty), the sub-account name itself is returned directly
 		return subAccountName
 	}
 

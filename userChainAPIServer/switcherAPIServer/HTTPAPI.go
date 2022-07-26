@@ -13,25 +13,25 @@ import (
 	"github.com/samuel/go-zookeeper/zk"
 )
 
-// SwitchUserCoins 欲切换的用户和币种
+// SwitchUserCoins User and currency to switch
 type SwitchUserCoins struct {
 	Coin    string   `json:"coin"`
 	PUNames []string `json:"punames"`
 }
 
-// SwitchMultiUserRequest 多用户切换请求数据结构
+// SwitchMultiUserRequest Multi-user handover request data structure
 type SwitchMultiUserRequest struct {
 	UserCoins []SwitchUserCoins `json:"usercoins"`
 }
 
-// APIResponse API响应数据结构
+// APIResponse API response data structure
 type APIResponse struct {
 	ErrNo   int    `json:"err_no"`
 	ErrMsg  string `json:"err_msg"`
 	Success bool   `json:"success"`
 }
 
-// SubPoolUpdate 子池更新信息
+// SubPoolUpdate Subpool update information
 type SubPoolUpdate struct {
 	Coin         string `json:"coin"`
 	SubPoolName  string `json:"subpool_name"`
@@ -39,7 +39,7 @@ type SubPoolUpdate struct {
 	PayoutAddr   string `json:"payout_addr"`
 }
 
-// SubPoolCoinbase 子池Coinbase信息
+// SubPoolCoinbase Subpool Coinbase Information
 type SubPoolCoinbase struct {
 	Success     bool   `json:"success"`
 	ErrNo       int    `json:"err_no"`
@@ -51,7 +51,7 @@ type SubPoolCoinbase struct {
 	} `json:"old"`
 }
 
-// SubPoolUpdateAck 子池更新响应
+// SubPoolUpdateAck Subpool update response
 type SubPoolUpdateAck struct {
 	SubPoolCoinbase
 	New struct {
@@ -60,7 +60,7 @@ type SubPoolUpdateAck struct {
 	} `json:"new"`
 }
 
-// SubPoolUpdateAckInner 子池更新响应(非公开)
+// SubPoolUpdateAckInner Subpool update response (non-public)
 type SubPoolUpdateAckInner struct {
 	SubPoolUpdateAck
 	Host struct {
@@ -68,14 +68,14 @@ type SubPoolUpdateAckInner struct {
 	} `json:"host"`
 }
 
-// HTTPRequestHandle HTTP请求处理函数
+// HTTPRequestHandle HTTP request handler
 type HTTPRequestHandle func(http.ResponseWriter, *http.Request)
 
-// 启动 API Server
+// start up API Server
 func runAPIServer() {
 	defer waitGroup.Done()
 
-	// HTTP监听
+	// HTTP listening
 	glog.Info("Listen HTTP ", configData.ListenAddr)
 
 	http.HandleFunc("/switch", basicAuth(switchHandle))
@@ -98,7 +98,7 @@ func runAPIServer() {
 	}*/
 }
 
-// basicAuth 执行Basic认证
+// basicAuth Perform Basic authentication
 func basicAuth(f HTTPRequestHandle) HTTPRequestHandle {
 	return func(w http.ResponseWriter, r *http.Request) {
 		apiUser := []byte(configData.APIUser)
@@ -106,24 +106,24 @@ func basicAuth(f HTTPRequestHandle) HTTPRequestHandle {
 
 		user, passwd, ok := r.BasicAuth()
 
-		// 检查用户名密码是否正确
+		// Check if the username and password are correct
 		if ok && subtle.ConstantTimeCompare(apiUser, []byte(user)) == 1 && subtle.ConstantTimeCompare(apiPasswd, []byte(passwd)) == 1 {
 			// 执行被装饰的函数
 			f(w, r)
 			return
 		}
 
-		// 认证失败，提示 401 Unauthorized
-		// Restricted 可以改成其他的值
+		// Authentication failed with 401 Unauthorized
+		// Restricted can be changed to other values
 		w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
-		// 401 状态码
+		// 401 status code
 		w.WriteHeader(http.StatusUnauthorized)
-		// 401 页面
+		// 401 page
 		w.Write([]byte(`<h1>401 - Unauthorized</h1>`))
 	}
 }
 
-// getCoinbaseHandle 获取子池coinbase信息
+// getCoinbaseHandle Get sub-pool coinbase information
 func getCoinbaseHandle(w http.ResponseWriter, req *http.Request) {
 	if len(configData.ZKSubPoolUpdateBaseDir) == 0 {
 		writeError(w, 403, "API disabled")
@@ -225,7 +225,7 @@ func getCoinbaseHandle(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-// updateCoinbaseHandle 更新子池coinbase信息
+// updateCoinbaseHandle Update subpool coinbase information
 func updateCoinbaseHandle(w http.ResponseWriter, req *http.Request) {
 	if len(configData.ZKSubPoolUpdateBaseDir) == 0 {
 		writeError(w, 403, "API disabled")
@@ -332,7 +332,7 @@ func updateCoinbaseHandle(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-// switchHandle 处理币种切换请求
+// switchHandle Handling currency switching requests
 func switchHandle(w http.ResponseWriter, req *http.Request) {
 	puname := req.FormValue("puname")
 	coin := req.FormValue("coin")
@@ -349,7 +349,7 @@ func switchHandle(w http.ResponseWriter, req *http.Request) {
 	writeSuccess(w)
 }
 
-// switchMultiUserHandle 处理多用户币种切换请求
+// switchMultiUserHandle Handling multi-user currency switching requests
 func switchMultiUserHandle(w http.ResponseWriter, req *http.Request) {
 	var reqData SwitchMultiUserRequest
 
@@ -426,7 +426,7 @@ func changeMiningCoin(puname string, coin string) (oldCoin string, apiErr *APIEr
 		return
 	}
 
-	// 检查币种是否存在
+	// Check if currency exists
 	exists := false
 
 	for _, availableCoin := range configData.AvailableCoins {
@@ -442,15 +442,15 @@ func changeMiningCoin(puname string, coin string) (oldCoin string, apiErr *APIEr
 	}
 
 	if configData.StratumServerCaseInsensitive {
-		// stratum server对子账户名大小写不敏感
-		// 简单的将子账户名转换为小写即可
+		// stratum server is not case sensitive to sub-account names
+		// Simply convert the sub-account name to lowercase
 		puname = strings.ToLower(puname)
 	}
 
-	// stratumSwitcher 监控的键
+	// stratumSwitcher monitor key
 	zkPath := configData.ZKSwitcherWatchDir + puname
 
-	// 看看键是否存在
+	// see if the key exists
 	exists, _, err := zookeeperConn.Exists(zkPath)
 
 	if err != nil {
@@ -460,7 +460,7 @@ func changeMiningCoin(puname string, coin string) (oldCoin string, apiErr *APIEr
 	}
 
 	if exists {
-		// 读取zookeeper看看原来的值是多少
+		// Read zookeeper to see what the original value is
 		oldCoinData, _, err := zookeeperConn.Get(zkPath)
 
 		if err != nil {
@@ -471,21 +471,21 @@ func changeMiningCoin(puname string, coin string) (oldCoin string, apiErr *APIEr
 
 		oldCoin = string(oldCoinData)
 
-		// 没有改变
-		// 没有改变不再返回错误，这样一来，如果stratumSwitcher错过了前一个切换消息，可以再收到一次切换消息以完成切换
-		// 在stratumSwitcher那里，如果币种确实没有发生改变，切换就不会发生
+		// No change
+		// No change no longer returns an error, so that if stratumSwitcher missed the previous switch message, it can receive another switch message to complete the switch
+		// In stratumSwitcher, if the currency does not change, the switch will not happen
 		/*if oldCoin == coin {
 			apiErr = APIErrCoinNoChange
 			return
 		}*/
 
-		// 查看子账户名的更新时间。如果子账户名刚刚创建，则延后15秒写入
+		// Check the update time of the sub-account name. If the sub-account name has just been created, it will be written with a delay of 15 seconds
 		userUpdateTime := initusercoin.GetUserUpdateTime(puname, coin)
 		safetyPeriod := initusercoin.GetSafetyPeriod()
 		nowTime := time.Now().Unix()
 
 		if userUpdateTime != 0 && nowTime-userUpdateTime >= safetyPeriod {
-			// 写入新值
+			// write new value
 			_, err = zookeeperConn.Set(zkPath, []byte(coin), -1)
 
 			if err != nil {
@@ -503,7 +503,7 @@ func changeMiningCoin(puname string, coin string) (oldCoin string, apiErr *APIEr
 			go func() {
 				time.Sleep(time.Duration(sleepTime) * time.Second)
 
-				// 写入新值
+				// write new value
 				_, err = zookeeperConn.Set(zkPath, []byte(coin), -1)
 
 				if err != nil {
@@ -513,7 +513,7 @@ func changeMiningCoin(puname string, coin string) (oldCoin string, apiErr *APIEr
 		}
 
 	} else {
-		// 不存在，直接创建
+		// does not exist, create it directly
 		_, err = zookeeperConn.Create(zkPath, []byte(coin), 0, zk.WorldACL(zk.PermAll))
 
 		if err != nil {

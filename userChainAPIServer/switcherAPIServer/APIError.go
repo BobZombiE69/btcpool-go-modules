@@ -8,7 +8,7 @@ type APIError struct {
 	ErrMsg string
 }
 
-// NewAPIError 新建一个APIError
+// NewAPIError Create a new APIError
 func NewAPIError(errNo int, errMsg string) *APIError {
 	apiErr := new(APIError)
 	apiErr.ErrNo = errNo
@@ -22,24 +22,24 @@ func (apiErr *APIError) Error() string {
 }
 
 var (
-	// APIErrPunameIsEmpty puname为空
+	// APIErrPunameIsEmpty puname is empty
 	APIErrPunameIsEmpty = NewAPIError(101, "puname is empty")
-	// APIErrPunameInvalid puname不合法
+	// APIErrPunameInvalid puname is illegal
 	APIErrPunameInvalid = NewAPIError(102, "puname invalid")
-	// APIErrCoinIsEmpty coin为空
+	// APIErrCoinIsEmpty coin is empty
 	APIErrCoinIsEmpty = NewAPIError(103, "coin is empty")
-	// APIErrCoinIsInexistent coin为空
+	// APIErrCoinIsInexistent coin is empty
 	APIErrCoinIsInexistent = NewAPIError(104, "coin is inexistent")
-	// APIErrReadRecordFailed 读取记录失败
+	// APIErrReadRecordFailed Failed to read record
 	APIErrReadRecordFailed = NewAPIError(105, "read record failed")
 
-	// APIErrCoinNoChange 币种未改变
-	//（该错误不再出现，允许切换到相同币种。这样一来，如果stratumSwitcher错过了前一个切换消息，可以再收到一次切换消息以完成切换）
+	// APIErrCoinNoChange Currency has not changed
+	//(The error no longer occurs, allowing switching to the same currency. This way, if the stratumSwitcher missed the previous switch message, it can receive another switch message to complete the switch)
 	//APIErrCoinNoChange = NewAPIError(106, "coin no change")
 
-	// APIErrWriteRecordFailed 写入记录失败
+	// APIErrWriteRecordFailed Failed to write record
 	APIErrWriteRecordFailed = NewAPIError(107, "write record failed")
 
-	// APIErrUserCoinsEmpty 用户币种数组为空
+	// APIErrUserCoinsEmpty User currency array is empty
 	APIErrUserCoinsEmpty = NewAPIError(108, "usercoins is empty")
 )

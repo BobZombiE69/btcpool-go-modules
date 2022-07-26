@@ -9,13 +9,13 @@ import (
 )
 
 func main() {
-	// 解析命令行参数
+	// Parse command line arguments
 	configFilePath := flag.String("config", "./config.json", "Path of config file")
-	// 不停机升级时保存的运行状态文件
+	// Running state file saved during non-stop upgrade
 	runtimeFilePath := flag.String("runtime", "", "Path of runtime file, use for zero downtime upgrade.")
 	flag.Parse()
 
-	// 读取配置文件
+	// read configuration file
 	var configData ConfigData
 	err := configData.LoadFromFile(*configFilePath)
 
@@ -24,14 +24,14 @@ func main() {
 		return
 	}
 
-	// 读取运行时状态
+	// Read runtime state
 	var runtimeData RuntimeData
 
 	if len(*runtimeFilePath) > 0 {
 		runtimeData.LoadFromFile(*runtimeFilePath)
 	}
 
-	// 开启HTTP Debug
+	// Enable HTTP Debug
 	if configData.EnableHTTPDebug {
 		go func() {
 			glog.Info("HTTP debug enabled: ", configData.HTTPDebugListenAddr)

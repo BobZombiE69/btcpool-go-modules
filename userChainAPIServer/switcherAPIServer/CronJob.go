@@ -10,39 +10,39 @@ import (
 	"github.com/golang/glog"
 )
 
-// UserCoinMapData 用户币种列表接口响应的data字段数据结构
+// UserCoinMapData The data field data structure of the user currency list interface response
 type UserCoinMapData struct {
 	UserCoin map[string]string `json:"user_coin"`
 	NowDate  int64             `json:"now_date"`
 }
 
-// UserCoinMapResponse 用户币种列表接口响应的数据结构
+// UserCoinMapResponse The data structure of the user currency list interface response
 type UserCoinMapResponse struct {
 	ErrNo  int             `json:"err_no"`
 	ErrMsg string          `json:"err_msg"`
 	Data   UserCoinMapData `json:"data"`
 }
 
-// RunCronJob 运行定时检测任务
+// RunCronJob Run timed detection tasks
 func RunCronJob() {
 	defer waitGroup.Done()
 
-	// 上次请求接口的时间
+	// The last time the interface was requested
 	var lastRequestDate int64
 
 	for true {
-		// 休眠放在开头，防止一启动就报 Too new user
+		// Put hibernation at the beginning to prevent Too new user from being reported as soon as it starts
 		time.Sleep(time.Duration(configData.CronIntervalSeconds) * time.Second)
 
-		// 执行操作
-		// 定义在函数中，这样失败时可以简单的return并进入休眠
+		// perform action
+		// Defined in the function, so that when it fails, you can simply return and go to sleep
 		func() {
 
 			url := configData.UserCoinMapURL
-			// 若上次请求过接口，则附加上次请求的时间到url
+			// If the interface was requested last time, append the time of the last request to the url
 			if lastRequestDate > 0 {
-				// 减去configData.CronIntervalSeconds是为了防止出现竟态条件。
-				// 比如在上次拉取之后，同一秒内又有币种切换，如果不减去，就可能会错过这个切换消息。
+				// configData.CronIntervalSeconds is subtracted to prevent race conditions.
+				// For example, after the last pull, there is another currency switch within the same second. If it is not subtracted, the switch message may be missed.
 				url += "?last_date=" + strconv.FormatInt(lastRequestDate-int64(configData.CronIntervalSeconds), 10)
 			}
 			glog.Info("HTTP GET ", url)
@@ -74,12 +74,12 @@ func RunCronJob() {
 				return
 			}
 
-			// 记录本次请求的时间
+			// Record the time of this request
 			lastRequestDate = userCoinMapResponse.Data.NowDate
 
 			glog.Info("HTTP GET Success. TimeStamp: ", userCoinMapResponse.Data.NowDate, "; UserCoin Num: ", len(userCoinMapResponse.Data.UserCoin))
 
-			// 遍历用户币种列表
+			// Traverse the user currency list
 			for puname, coin := range userCoinMapResponse.Data.UserCoin {
 				oldCoin, err := changeMiningCoin(puname, coin)
 
