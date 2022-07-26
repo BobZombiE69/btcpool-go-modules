@@ -10,7 +10,7 @@ import (
 
 //////////////////////////////// SessionIDManager //////////////////////////////
 
-// SessionIDManager 线程安全的会话ID管理器
+// SessionIDManager Thread-safe session ID manager
 type SessionIDManager struct {
 	//
 	//  SESSION ID: UINT32
@@ -29,12 +29,12 @@ type SessionIDManager struct {
 	lock          sync.Mutex
 
 	indexBits uint8 // bits of session index id
-	// SessionIDMask 会话ID掩码，用于分离serverID和sessionID
-	// 也是sessionID部分可以达到的最大数值
+	// SessionIDMask session ID mask, used to separate serverID and sessionID
+	// It is also the maximum value that the sessionID part can reach
 	sessionIDMask uint32
 }
 
-// NewSessionIDManager 创建一个会话ID管理器实例
+// NewSessionIDManager Create a session ID manager instance
 func NewSessionIDManager(serverID uint8, indexBits uint8) (manager *SessionIDManager, err error) {
 	if indexBits > 24 {
 		err = errors.New("indexBits should not > 24, but it = " + strconv.Itoa(int(indexBits)))
@@ -52,8 +52,8 @@ func NewSessionIDManager(serverID uint8, indexBits uint8) (manager *SessionIDMan
 	manager.serverID = uint32(serverID) << indexBits
 	manager.sessionIDs = bitset.New(uint(manager.sessionIDMask + 1))
 	manager.count = 0
-	// 设置一个与sserver不同的初始值，以便尽早发现 session ID 不一致
-	// (sserver忘记启用WORK_WITH_STRATUM_SWITCHER编译选项)的问题
+	// Set an initial value different from sserver to catch session ID inconsistencies early
+	// (server forgot to enable the WORK_WITH_STRATUM_SWITCHER compile option)
 	manager.allocIDx = 128
 	manager.allocInterval = 0
 
@@ -61,19 +61,19 @@ func NewSessionIDManager(serverID uint8, indexBits uint8) (manager *SessionIDMan
 	return
 }
 
-// setAllocInterval 设置分配id的间隔
-// 该功能可在无DoS风险的情况下为会话临时保留更多的挖矿空间
-// (目前用于与NiceHash以太坊客户端取得兼容)
+// setAllocInterval sets the interval for allocating id
+// This feature temporarily reserves more mining space for sessions without DoS risk
+// (Currently for compatibility with NiceHash Ethereum client)
 func (manager *SessionIDManager) setAllocInterval(interval uint32) {
 	manager.allocInterval = interval
 }
 
-// isFull 判断会话ID是否已满（内部使用，不加锁）
+// isFull Determine whether the session ID is full (internal use, not locked)
 func (manager *SessionIDManager) isFullWithoutLock() bool {
 	return (manager.count > manager.sessionIDMask)
 }
 
-// IsFull 判断会话ID是否已满
+// IsFull Determine if the session ID is full
 func (manager *SessionIDManager) IsFull() bool {
 	defer manager.lock.Unlock()
 	manager.lock.Lock()
@@ -81,7 +81,7 @@ func (manager *SessionIDManager) IsFull() bool {
 	return manager.isFullWithoutLock()
 }
 
-// AllocSessionID 为调用者分配一个会话ID
+// AllocSessionID Assign a session ID to the caller
 func (manager *SessionIDManager) AllocSessionID() (sessionID uint32, err error) {
 	defer manager.lock.Unlock()
 	manager.lock.Lock()
@@ -107,7 +107,7 @@ func (manager *SessionIDManager) AllocSessionID() (sessionID uint32, err error) 
 	return
 }
 
-// ResumeSessionID 恢复之前的会话ID
+// ResumeSessionID Restore previous session ID
 func (manager *SessionIDManager) ResumeSessionID(sessionID uint32) (err error) {
 	defer manager.lock.Unlock()
 	manager.lock.Lock()
@@ -132,7 +132,7 @@ func (manager *SessionIDManager) ResumeSessionID(sessionID uint32) (err error) {
 	return
 }
 
-// FreeSessionID 释放调用者持有的会话ID
+// FreeSessionID Release the session ID held by the caller
 func (manager *SessionIDManager) FreeSessionID(sessionID uint32) {
 	defer manager.lock.Unlock()
 	manager.lock.Lock()
@@ -140,7 +140,7 @@ func (manager *SessionIDManager) FreeSessionID(sessionID uint32) {
 	idx := sessionID & manager.sessionIDMask
 
 	if !manager.sessionIDs.Test(uint(idx)) {
-		// ID未分配，无需释放
+		// ID is not allocated, no need to free
 		return
 	}
 
