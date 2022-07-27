@@ -34,7 +34,7 @@ const ethproxyVersion = "ETHProxy/1.0.0"
 // The magic number of BTCAgent's ex-message
 const btcAgentExMessageMagicNumber = 0x7F
 
-// Protocol detection timeout
+// 协议检测超时时间
 const protocolDetectTimeoutSeconds = 15
 
 // Miner name get timeout

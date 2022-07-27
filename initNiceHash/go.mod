@@ -1,4 +1,4 @@
-module github.com/BobZombiE69/btcpool-go-modules/initNiceHash
+module github.com/btccom/btcpool-go-modules/initNiceHash
 
 go 1.12
 
