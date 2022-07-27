@@ -20,13 +20,13 @@ Construct
 ```bash
 mkdir -p /work/golang
 export GOPATH=/work/golang
-GIT_TERMINAL_PROMPT=1 go get github.com/btccom/btcpool-go-modules/stratumSwitcher
+GIT_TERMINAL_PROMPT=1 go get github.com/BobZombiE69/btcpool-go-modules/wstratumSwitcher
 ```
 
 Generate installation package (optional)
 
 ```bash
-cd $GOPATH/src/github.com/btccom/btcpool-go-modules/stratumSwitcher
+cd $GOPATH/src/github.com/BobZombiE69/btcpool-go-modules/stratumSwitcher
 mkdir build
 cd build
 cmake ..
@@ -38,7 +38,7 @@ Edit configuration file
 ```bash
 mkdir /work/golang/stratumSwitcher
 mkdir /work/golang/stratumSwitcher/log
-cp /work/golang/src/github.com/btccom/btcpool-go-modules/stratumSwitcher/config.default.json /work/golang/stratumSwitcher/config.json
+cp /work/golang/src/github.com/BobZombiE69/btcpool-go-modules/stratumSwitcher/config.default.json /work/golang/stratumSwitcher/config.json
 vim /work/golang/stratumSwitcher/config.json
 ```
 
@@ -80,8 +80,8 @@ supervisorctl status
 
 ```bash
 export GOPATH=/work/golang
-GIT_TERMINAL_PROMPT=1 go get -u github.com/btccom/btcpool-go-modules/stratumSwitcher
-diff /work/golang/src/github.com/btccom/btcpool-go-modules/stratumSwitcher/config.default.json /work/golang/stratumSwitcher/config.json
+GIT_TERMINAL_PROMPT=1 go get -u github.com/BobZombiE69/btcpool-go-modules/stratumSwitcher
+diff /work/golang/src/github.com/BobZombiE69/btcpool-go-modules/stratumSwitcher/config.default.json /work/golang/stratumSwitcher/config.json
 ```
 
 ##### graceful restart/hot update (experimental)

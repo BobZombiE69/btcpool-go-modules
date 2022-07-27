@@ -112,7 +112,7 @@ Construct
 ```bash
 mkdir -p /work/golang
 export GOPATH=/work/golang
-GIT_TERMINAL_PROMPT=1 go get github.com/btccom/btcpool-go-modules/initUserCoin
+GIT_TERMINAL_PROMPT=1 go get github.com/BobZombiE69/btcpool-go-modules/initUserCoin
 ```
 
 Edit configuration file
@@ -120,7 +120,7 @@ Edit configuration file
 ```bash
 mkdir /work/golang/initUserCoin
 mkdir /work/golang/initUserCoin/log
-cp /work/golang/src/github.com/btccom/btcpool-go-modules/initUserCoin/config.default.json /work/golang/initUserCoin/config.json
+cp /work/golang/src/github.com/BobZombiE69/btcpool-go-modules/initUserCoin/config.default.json /work/golang/initUserCoin/config.json
 vim /work/golang/initUserCoin/config.json
 ```
 
@@ -156,6 +156,6 @@ supervisorctl status
 
 ```bash
 export GOPATH=/work/golang
-GIT_TERMINAL_PROMPT=1 go get -u github.com/btccom/btcpool-go-modules/initUserCoin
-diff /work/golang/src/github.com/btccom/btcpool-go-modules/initUserCoin/config.default.json /work/golang/initUserCoin/config.json
+GIT_TERMINAL_PROMPT=1 go get -u github.com/BobZombiE69/btcpool-go-modules/initUserCoin
+diff /work/golang/src/github.com/BobZombiE69/btcpool-go-modules/initUserCoin/config.default.json /work/golang/initUserCoin/config.json
 ```

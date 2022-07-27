@@ -427,7 +427,7 @@ Construct
 ```bash
 mkdir -p /work/golang
 export GOPATH=/work/golang
-GIT_TERMINAL_PROMPT=1 go get github.com/btccom/btcpool-go-modules/switcherAPIServer
+GIT_TERMINAL_PROMPT=1 go get github.com/BobZombiE69/btcpool-go-modules/switcherAPIServer
 ```
 
 Edit configuration file
@@ -435,7 +435,7 @@ Edit configuration file
 ```bash
 mkdir /work/golang/switcherAPIServer
 mkdir /work/golang/switcherAPIServer/log
-cp /work/golang/src/github.com/btccom/btcpool-go-modules/switcherAPIServer/config.default.json /work/golang/switcherAPIServer/config.json
+cp /work/golang/src/github.com/BobZombiE69/btcpool-go-modules/switcherAPIServer/config.default.json /work/golang/switcherAPIServer/config.json
 vim /work/golang/switcherAPIServer/config.json
 ```
 
@@ -471,6 +471,6 @@ supervisorctl status
 
 ```bash
 export GOPATH=/work/golang
-GIT_TERMINAL_PROMPT=1 go get -u github.com/btccom/btcpool-go-modules/switcherAPIServer
-diff /work/golang/src/github.com/btccom/btcpool-go-modules/switcherAPIServer/config.default.json /work/golang/switcherAPIServer/config.json
+GIT_TERMINAL_PROMPT=1 go get -u github.com/BobZombiE69/btcpool-go-modules/switcherAPIServer
+diff /work/golang/src/github.com/BobZombiE69/btcpool-go-modules/switcherAPIServer/config.default.json /work/golang/switcherAPIServer/config.json
 ```

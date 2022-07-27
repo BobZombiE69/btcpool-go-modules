@@ -6,7 +6,7 @@ Combining two modules, please see the introduction of specific submodules:
   Initialize the user currency record in zookeeper
 ## Construct
 ```
-go get -u github.com/btccom/btcpool-go-modules/userChainAPIServer
+go get -u github.com/BobZombiE69/btcpool-go-modules/userChainAPIServer
 ```
 
 ## run

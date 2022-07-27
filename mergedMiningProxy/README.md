@@ -22,7 +22,7 @@ ln -s /usr/local/go/bin/go /usr/local/bin/go
 ```bash
 mkdir -p /work/golang
 export GOPATH=/work/golang
-GIT_TERMINAL_PROMPT=1 go get github.com/btccom/btcpool-go-modules/mergedMiningProxy
+GIT_TERMINAL_PROMPT=1 go get github.com/BobZombiE69/btcpool-go-modules/mergedMiningProxy
 ```
 
 #### Edit configuration file
@@ -30,7 +30,7 @@ GIT_TERMINAL_PROMPT=1 go get github.com/btccom/btcpool-go-modules/mergedMiningPr
 ```bash
 mkdir /work/golang/mergedMiningProxy
 mkdir /work/golang/mergedMiningProxy/log
-cp /work/golang/src/github.com/btccom/btcpool-go-modules/mergedMiningProxy/config.default.json /work/golang/mergedMiningProxy/config.json
+cp /work/golang/src/github.com/BobZombiE69/btcpool-go-modules/mergedMiningProxy/config.default.json /work/golang/mergedMiningProxy/config.json
 vim /work/golang/mergedMiningProxy/config.json
 ```
 
@@ -225,8 +225,8 @@ supervisorctl status
 
 ```bash
 export GOPATH=/work/golang
-GIT_TERMINAL_PROMPT=1 go get -u github.com/btccom/btcpool-go-modules/mergedMiningProxy
-diff /work/golang/src/github.com/btccom/btcpool-go-modules/mergedMiningProxy/config.default.json /work/golang/mergedMiningProxy/config.json
+GIT_TERMINAL_PROMPT=1 go get -u github.com/BobZombiE69/btcpool-go-modules/mergedMiningProxy
+diff /work/golang/src/github.com/BobZombiE69/btcpool-go-modules/mergedMiningProxy/config.default.json /work/golang/mergedMiningProxy/config.json
 ```
 
 ### Call the proxy's RPC
