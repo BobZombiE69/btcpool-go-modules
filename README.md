@@ -12,7 +12,7 @@ Multi-currency joint mining agent, support Namecoin, Elastos, etc., and Bitcoin 
 
 # [Init NiceHash](initNiceHash/)
 
-Initialize the NiceHash configuration in ZooKeeper, obtain the minimum diffiStandby sserver to use. by each algorithm by calling the NiceHash API, and write to ZooKeeper to备 sserver 来使用。
+Initialize the NiceHash configuration in ZooKeeper, obtain the minimum diffiStandby sserver to use. by each algorithm by calling the NiceHash API, and write to ZooKeeper to standby sserver to use.
 
 # [Chain Switcher](chainSwitcher/)
 Send currency automatic switching command to sserver.

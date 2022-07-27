@@ -10,30 +10,30 @@ import (
 	"github.com/samuel/go-zookeeper/zk"
 )
 
-// zookeeper连接超时时间
+// zookeeper connection timeout
 const zookeeperConnectingTimeoutSeconds = 60
 
-// Zookeeper连接失活超时时间
+// Zookeeper connection deactivation timeout
 const zookeeperConnAliveTimeout = 5
 
-// NodeWatcherChannels 节点监控者的channel
+// NodeWatcherChannels Node monitor's channel
 type NodeWatcherChannels map[uint32]chan zk.Event
 
-// NodeWatcher 节点监控器
+// NodeWatcher Node monitor
 type NodeWatcher struct {
-	// Zookeeper管理器
+	// Zookeeper Manager
 	zookeeperManager *ZookeeperManager
-	// 被监控节点的路径
+	// The path of the monitored node
 	nodePath string
-	// 被监控节点的当前值
+	// The current value of the monitored node
 	nodeValue []byte
-	// 被监控的Zookeeper事件
+	// Monitored Zookeeper events
 	zkWatchEvent <-chan zk.Event
-	// 节点监控者的channel
+	// Node monitor's channel
 	watcherChannels NodeWatcherChannels
 }
 
-// NewNodeWatcher 新建节点监控器
+// NewNodeWatcher New Node Monitor
 func NewNodeWatcher(zookeeperManager *ZookeeperManager) *NodeWatcher {
 	watcher := new(NodeWatcher)
 	watcher.zookeeperManager = zookeeperManager
@@ -63,20 +63,20 @@ type NodeWatcherMap map[string]*NodeWatcher
 
 // ZookeeperManager Zookeeper管理器
 type ZookeeperManager struct {
-	// 修改 watcherMap 时加的锁
+	// The lock added when modifying watcherMap
 	lock sync.Mutex
 	// 监控器Map
 	watcherMap NodeWatcherMap
-	// Zookeeper连接
+	// Zookeeper connection
 	zookeeperConn *zk.Conn
 }
 
-// NewZookeeperManager 新建Zookeeper管理器
+// NewZookeeperManager New Zookeeper Manager
 func NewZookeeperManager(brokers []string) (manager *ZookeeperManager, err error) {
 	manager = new(ZookeeperManager)
 	manager.watcherMap = make(NodeWatcherMap)
 
-	// 建立到Zookeeper集群的连接
+	// Establish a connection to the Zookeeper cluster
 	var event <-chan zk.Event
 	manager.zookeeperConn, event, err = zk.Connect(brokers, time.Duration(zookeeperConnAliveTimeout)*time.Second)
 	if err != nil {
@@ -109,7 +109,7 @@ func NewZookeeperManager(brokers []string) (manager *ZookeeperManager, err error
 	return
 }
 
-// removeNodeWatcher 移除监控节点
+// removeNodeWatcher remove monitor node
 func (manager *ZookeeperManager) removeNodeWatcher(watcher *NodeWatcher) {
 	delete(manager.watcherMap, watcher.nodePath)
 	if glog.V(3) {
@@ -117,7 +117,7 @@ func (manager *ZookeeperManager) removeNodeWatcher(watcher *NodeWatcher) {
 	}
 }
 
-// GetW 获取Zookeeper节点的值并设置监控
+// GetW Get the value of the Zookeeper node and set up monitoring
 func (manager *ZookeeperManager) GetW(path string, sessionID uint32) (value []byte, event <-chan zk.Event, err error) {
 	manager.lock.Lock()
 	defer manager.lock.Unlock()
@@ -152,13 +152,13 @@ func (manager *ZookeeperManager) GetW(path string, sessionID uint32) (value []by
 	return
 }
 
-// Create 创建Zookeeper节点
+// Create Create a Zookeeper stanza点
 func (manager *ZookeeperManager) Create(path string, data []byte) (err error) {
 	_, err = manager.zookeeperConn.Create(path, data, 0, zk.WorldACL(zk.PermAll))
 	return
 }
 
-// ReleaseW 释放监控
+// ReleaseW release monitoring
 func (manager *ZookeeperManager) ReleaseW(path string, sessionID uint32) {
 	manager.lock.Lock()
 	defer manager.lock.Unlock()
@@ -181,10 +181,10 @@ func (manager *ZookeeperManager) ReleaseW(path string, sessionID uint32) {
 		glog.Info("Zookeeper: release WatcherChannel: ", path, "; ", Uint32ToHex(sessionID))
 	}
 
-	// go-zookeeper 的代码显示，它的watcher只会在接收到事件后关闭并释放，
-	// 因此，在此处移除 NodaWatcher 并不能使 go-zookeeper 中的 watcher 释放，
-	// 并且，反复打开新 watcher 反而会导致 go-zookeeper 处生成大量 watcher 而内存泄露。
-	// 因此，此处不再自动释放 NodeWatcher。NodeWatcher 只在接收到 zookeeper 事件后释放。
+	// The code of go-zookeeper shows that its watcher will only close and release after receiving the event,
+	// Therefore, removing NodaWatcher here does not free the watcher in go-zookeeper,
+	// Moreover, repeatedly opening new watchers will cause a large number of watchers to be generated at go-zookeeper and memory leaks.
+	// Therefore, NodeWatcher is no longer automatically released here. NodeWatcher is only released after receiving zookeeper events.
 	/*
 		if len(watcher.watcherChannels) == 0 {
 			manager.removeNodeWatcher(watcher)
@@ -192,7 +192,7 @@ func (manager *ZookeeperManager) ReleaseW(path string, sessionID uint32) {
 	*/
 }
 
-// 递归创建Zookeeper Node
+// Create Zookeeper recursively Node
 func (manager *ZookeeperManager) createZookeeperPath(path string) error {
 	pathTrimmed := strings.Trim(path, "/")
 	dirs := strings.Split(pathTrimmed, "/")
@@ -202,19 +202,19 @@ func (manager *ZookeeperManager) createZookeeperPath(path string) error {
 	for _, dir := range dirs {
 		currPath += "/" + dir
 
-		// 看看键是否存在
+		// see if the key exists
 		exists, _, err := manager.zookeeperConn.Exists(currPath)
 
 		if err != nil {
 			return err
 		}
 
-		// 已存在，不需要创建
+		// already exists, no need to create
 		if exists {
 			continue
 		}
 
-		// 不存在，创建
+		// does not exist, create
 		_, err = manager.zookeeperConn.Create(currPath, []byte{}, 0, zk.WorldACL(zk.PermAll))
 
 		if err != nil {

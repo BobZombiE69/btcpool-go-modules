@@ -3,8 +3,8 @@ package main
 import (
 	"flag"
 
-	initusercoin "github.com/btccom/btcpool-go-modules/userChainAPIServer/initUserCoin"
-	switcherapiserver "github.com/btccom/btcpool-go-modules/userChainAPIServer/switcherAPIServer"
+	initusercoin "github.com/BobZombiE69/btcpool-go-modules/userChainAPIServer/initUserCoin"
+	switcherapiserver "github.com/BobZombiE69/btcpool-go-modules/userChainAPIServer/switcherAPIServer"
 )
 
 func main() {
