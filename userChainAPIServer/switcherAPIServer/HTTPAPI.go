@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	initusercoin "github.com/btccom/btcpool-go-modules/userChainAPIServer/initUserCoin"
+	initusercoin "github.com/BobZombiE69/btcpool-go-modules/userChainAPIServer/initUserCoin"
 	"github.com/golang/glog"
 	"github.com/samuel/go-zookeeper/zk"
 )
