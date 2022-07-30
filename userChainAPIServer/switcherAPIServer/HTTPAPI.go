@@ -108,7 +108,7 @@ func basicAuth(f HTTPRequestHandle) HTTPRequestHandle {
 
 		// Check if the username and password are correct
 		if ok && subtle.ConstantTimeCompare(apiUser, []byte(user)) == 1 && subtle.ConstantTimeCompare(apiPasswd, []byte(passwd)) == 1 {
-			// 执行被装饰的函数
+			// execute the decorated function
 			f(w, r)
 			return
 		}
