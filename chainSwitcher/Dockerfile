@@ -1,4 +1,4 @@
-FROM golang as build
+FROM golang:1.10.3  as build
 
 # dependencies
 RUN go get -v github.com/segmentio/kafka-go \
@@ -9,7 +9,7 @@ RUN go get -v github.com/segmentio/kafka-go \
 COPY . /go/src/github.com/BobZombiE69/btcpool-go-modules/
 RUN bash /go/src/github.com/BobZombiE69/btcpool-go-modules/chainSwitcher/build.sh
 
-FROM php:cli
+FROM php:7.4-cli
 COPY --from=build /go/src/github.com/BobZombiE69/btcpool-go-modules/chainSwitcher/chainSwitcher /usr/local/bin/
 COPY install/cfg-generator/ /usr/local/bin/
 COPY chainSwitcher/entrypoint.sh /
